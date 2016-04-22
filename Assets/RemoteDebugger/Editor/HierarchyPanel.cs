@@ -7,8 +7,8 @@ using System.Collections.Generic;
 public class HierarchyPanel : EditorWindow{
 	// Use this for initialization
 	void Start () {
-	
 	}
+
 
 
     [MenuItem("Tools/RemoteDebugger/Hierarchy")]
