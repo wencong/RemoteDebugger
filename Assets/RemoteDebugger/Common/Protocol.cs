@@ -38,13 +38,23 @@ public enum NetCmd
     C2S_CmdQueryAllObjs,
     C2S_CmdSetObjActive,
     C2S_QueryComponent,
+    C2S_GetComponentProperty,
     C2S_EnableComponent,
+    C2S_CustomComponent,
+    C2S_Log,
 
     S2C_CmdBegin             = 2000,
     S2C_CmdQueryAllObjs,
     S2C_CmdSetObjActive,
     S2C_QueryComponent,
+    S2C_GetComponentProperty,
     S2C_EnableComponent,
+    S2C_CustomComponent,
+    S2C_Log,
+    S2C_FinishWait,
 
     SV_CmdEnd,
 }
+
+
+

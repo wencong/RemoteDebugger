@@ -26,9 +26,13 @@ public static class ComponentExtension {
 	public static void SetValue<T>(this Component component, string propertyName, T value) {
 		if (component != null && !string.IsNullOrEmpty(propertyName)) {
 			PropertyInfo propertyInfo = component.GetType().GetProperty(propertyName);
-			if (propertyInfo != null && propertyInfo.PropertyType == typeof(T)) {
-				propertyInfo.SetValue(component, value, null);
-			}
+            FieldInfo fieldInfo = component.GetType().GetField(propertyName);
+            if (propertyInfo != null) {
+                propertyInfo.SetValue(component, value, null);
+            }
+            else if (fieldInfo != null) {
+                fieldInfo.SetValue(component, value);
+            }
 		}
 	}
 }

@@ -27,8 +27,11 @@ SOFTWARE.
 
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using System;
 using System.Runtime.InteropServices;
+using UnityEngine;
+//using UnityEditor;
 
 public enum CmdIOErrorCode 
 {
@@ -130,19 +133,21 @@ public class Cmd {
             _writeOffset += byteArray.Length;
         }
 	}
-	
 	public NetCmd ReadNetCmd() 			{ return (NetCmd)ReadInt16(); }
 	public short ReadInt16() 				{ return (short)ReadPrimitive<short>();	}
 	public int ReadInt32() 					{ return (int)ReadPrimitive<int>();	}
 	public float ReadFloat()				{ return (float)ReadPrimitive<float>();	}
-	
+    public float ReadSingle()               { return (Single)ReadPrimitive<Single>(); }
+    public bool ReadBool() { return (int)ReadPrimitive<int>() == 1 ? true : false; }
 	public void WriteNetCmd(NetCmd cmd)	{	WritePrimitive((short)cmd);	}
 	public void WriteInt16(short value)		{	WritePrimitive(value);	}
 	public void WriteInt32(int value) 		{	WritePrimitive(value);	}
 	public void WriteFloat(float value)		{	WritePrimitive(value);	}
-	public void WriteStringStripped(string value) 	{ WriteStringStripped (value, STRIP_NAME_MAX_LEN); }
+    public void WriteSingle(Single value)   {   WritePrimitive(value);  }
+    public void WriteBool(bool value)       {   WritePrimitive(value ? 1 : 0); }
+    public void WriteStringStripped(string value) 	{ WriteStringStripped (value, STRIP_NAME_MAX_LEN); }
 	public void WriteString(string value) 			{ WriteStringStripped (value, int.MaxValue); }
-	
+
 	private int _writeOffset = 0;
 	private int _readOffset = 0;
 	private byte[] _buffer;
