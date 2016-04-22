@@ -54,10 +54,12 @@ public class NetServer : IDisposable {
                             case CmdExecResult.Succ:
                                 break;
                             case CmdExecResult.Failed:
-                                Debug.Log("net cmd execution failed");
+                                //Debug.Log("net cmd execution failed");
+                                Util.Log(this, "net cmd execution failed");
                                 break;
                             case CmdExecResult.HandlerNotFound:
-                                Debug.Log("net cmd unknown");
+                                //Debug.Log("net cmd unknown");
+                                Util.Log(this, "net cmd unknown");
                                 break;
                         }
                         

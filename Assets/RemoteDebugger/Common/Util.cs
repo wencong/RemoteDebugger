@@ -1,12 +1,106 @@
 using System;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using LitJson;
 
-public enum ObjType {
-    enum_gameobject,
-    enum_component
+
+public class RDDataBase {
+    public static string Serializer<T>(T obj) {
+        return JsonMapper.ToJson(obj);
+    }
+
+    public static T Deserializer<T>(string data){
+        return JsonMapper.ToObject<T>(data);
+    }
 }
+
+public class RDGameObject {
+    public int nInstanceID;
+    public string szName;
+    public bool bActive;
+
+    public int nParentID;
+    public int[] arrChildren;
+
+    public bool bExpand;
+
+    public RDGameObject() {
+
+    }
+
+    public RDGameObject(GameObject gameobject) {
+        this.nInstanceID = gameobject.GetInstanceID();
+        this.szName  = gameobject.name;
+        this.bActive = gameobject.activeSelf;
+
+        if (gameobject.transform.parent != null) {
+            this.nParentID = gameobject.transform.parent.gameObject.GetInstanceID();
+        }
+        else {
+            this.nParentID = -1;
+        }
+
+        arrChildren = new int[gameobject.transform.childCount];
+
+        for (int i = 0; i < arrChildren.Length; ++i) {
+            arrChildren[i] = gameobject.transform.GetChild(i).gameObject.GetInstanceID();
+        }
+    }
+}
+
+public class RDComponent {
+    public int nInstanceID;
+    public string szName;
+
+    public bool bContainEnable;
+    public bool bEnable;
+
+    public RDComponent() {
+
+    }
+
+    public RDComponent(Component comp) {
+        this.nInstanceID = comp.GetInstanceID();
+        this.szName = comp.name;
+
+        if (comp.ContainProperty("enable")) {
+            bContainEnable = true;
+            bEnable = comp.GetValue<bool>("enabled");
+        }
+        else {
+            bContainEnable = bEnable = false;
+        }
+    }
+}
+
+public class RDProperty {
+
+}
+
+public class CompProperty {
+    public string compType;
+    public string type;
+    public string name;
+    public System.Object value;
+    public bool isEnum = false;
+    public bool isUnityBaseType = false;
+    public int arraySize = 0;
+    public void UnityBaseTypeDeserialize(string data) {
+        Type PropertyType = Type.GetType(this.type + ", UnityEngine");
+        if (PropertyType == null) {
+            return;
+        }
+        MethodInfo m = typeof(CompProperty).GetMethod("JsonToObject").MakeGenericMethod(PropertyType);
+        this.value = m.Invoke(this, new System.Object[] { data });
+    }
+    public T JsonToObject<T>(string data) {
+        T result = JsonMapper.ToObject<T>(data);
+        return result;
+    } 
+}
+
 
 public class CompNode {
     public int instance_id;
@@ -22,8 +116,7 @@ public class ObjNode {
     public bool expand;
 
     public int parent_id;
-    public List<ObjNode> self_childrens = new List<ObjNode>();
-    public CompNode[] self_componets = null;
+    public List<int> self_childrenID = new List<int>();
 
     public ObjNode() {
 
@@ -35,176 +128,125 @@ public class ObjNode {
         this.active = active;
         expand = false;
     }
-
-    public void AddChild(ObjNode objNode) {
+    public List<ObjNode> AllChildren(ObjNode rootNode) {
+        List<ObjNode> objNodes = new List<ObjNode>();
+        ObjNode root_node = rootNode;
+        ObjNode node = null;
+        for (int i = 0; i < root_node.self_childrenID.Count; i++) {
+            GameRunTimeDataSet.ms_nodeDict.TryGetValue(root_node.self_childrenID[i], out node);
+            objNodes.Add(node);
+            foreach (ObjNode objNode in AllChildren(node))
+                objNodes.Add(objNode);
+        }
+        return objNodes;
+    }
+    public void AddChildID(ObjNode objNode) {
         objNode.parent_id = instance_id;
-        self_childrens.Add(objNode);
+        self_childrenID.Add(objNode.instance_id);
     }
 
-    public List<ObjNode> Children() {
-        return self_childrens;
+    public List<int> ChildrenID() {
+        return self_childrenID;
     }
 
     public void Clear() {
-        for (int i = 0; i < self_childrens.Count; ++i) {
-            self_childrens[i].Clear();
+        for (int i = 0; i < self_childrenID.Count; ++i) {
+            ObjNode node = null;
+            if (GameRunTimeDataSet.ms_nodeDict != null)
+                GameRunTimeDataSet.ms_nodeDict.TryGetValue(self_childrenID[i], out node);
+            if (node != null) {
+                node.Clear();
+                continue;
+            }
+            if (ShowPanelDataSet.ms_objNodeDict != null)
+                ShowPanelDataSet.ms_objNodeDict.TryGetValue(self_childrenID[i], out node);
+            if (node != null)
+                node.Clear();
         }
-        self_childrens.Clear();
+        self_childrenID.Clear();
     }
 }
 
 public class Util {
     private static StringBuilder sb = new StringBuilder(4096 * 4);
 
-    public static string ObjNode2String(ObjNode node) {
-        sb.Remove(0, sb.Length);
-
-        _AddNodeToStringBuilder(node);
-
-        return sb.ToString();
-    }
-
-    private static void _AddNodeToStringBuilder(ObjNode node) {
-        int id = node.instance_id;
-        string name = node.name;
-        int act = node.active == true ? 1 : 0;
-        int id_parent = node.parent_id;
-        
-
-        sb.AppendFormat("{0},{1},{2},{3};", id, name, act, id_parent);
-
-        for (int i = 0; i < node.self_childrens.Count; ++i) {
-            _AddNodeToStringBuilder(node.self_childrens[i]);
-        }
-    }
-
-    public static ObjNode[] String2NodeArray(string s) {
-        char[] splits = { ';' };
-        char[] sp = { ',' };
-
-        string[] str_nodes = s.Split(splits);
-
-        ObjNode[] arr_nodes = new ObjNode[str_nodes.Length - 1];
-
-        for (int i = 0; i < str_nodes.Length; ++i) {
-            string str_node = str_nodes[i];
-            try {
-                if (str_node == "") {
-                    continue;
-                }
-
-                string[] str_nodeinfo = str_node.Split(sp);
-
-                ObjNode node = new ObjNode();
-                node.instance_id = int.Parse(str_nodeinfo[0]);
-                node.name = str_nodeinfo[1];
-                node.active = str_nodeinfo[2] == "1" ? true : false;
-                node.expand = false;
-                node.parent_id = int.Parse(str_nodeinfo[3]);
-
-                arr_nodes[i] = node;
-            }
-            catch (Exception e) {
-                Debug.LogException(e);
-                Debug.Log(string.Format("str_node: {0}, index: {1}, total length: {2}", str_node, i, str_nodes.Length));
-            }
-            
-        }
-        return arr_nodes;
-    }
-
-    //public static Dictionary<int, ObjNode> cacheNodes = new Dictionary<int, ObjNode>();
-
-    public static ObjNode String2ObjNode(string s) {
-        //cacheNodes.Clear();
-        if (ShowPanelDataSet.ms_objNodeDict == null) {
-            ShowPanelDataSet.ms_objNodeDict = new Dictionary<int, ObjNode>();
-        }
-        else {
-            ShowPanelDataSet.ms_objNodeDict.Clear();
-        }
-
-        ObjNode[] arr_nodes = String2NodeArray(s);
-
-        for (int i = 0; i < arr_nodes.Length; ++i) {
-            ObjNode node = arr_nodes[i];
-
-            ShowPanelDataSet.ms_objNodeDict.Add(node.instance_id, node);
-           
-            ObjNode node_parent = null;
-            ShowPanelDataSet.ms_objNodeDict.TryGetValue(node.parent_id, out node_parent);
-            if (node_parent != null) {
-                node_parent.AddChild(node);
-            }
-        }
-
-        return ShowPanelDataSet.ms_objNodeDict[0];
-    }
-
-
-    public static string Comps2String(Component[] comps) {
-        sb.Remove(0, sb.Length);
-
-        for (int i = 0; i < comps.Length; ++i) {
-			Component comp = comps[i];
-
-			int contain_enable = 1;
-			int enabled = 1;
-			if (!comp.ContainProperty("enabled")) {
-				contain_enable = 0;
-				enabled = 0;
-			}
-			else if (!comp.GetValue<bool>("enabled")){
-				enabled = 0;
-			}
-
-			int id = comp.GetInstanceID();
-			string name = comp.GetType().ToString();
-			
-			sb.AppendFormat("{0},{1},{2},{3};", id, name, contain_enable, enabled);
-        }
-
-        return sb.ToString();
-    }
-
-    public static CompNode[] String2Comps(string data) {
-        char[] splits = { ';' };
-        char[] sp = { ',' };
-
-        string[] str_nodes = data.Split(splits);
-
-        CompNode[] arr_nodes = new CompNode[str_nodes.Length - 1];
-
-        for (int i = 0; i < str_nodes.Length; ++i) {
-            string str_node = str_nodes[i];
-            if (str_node == "") {
-                continue;
-            }
-
-            string[] str_nodeinfo = str_node.Split(sp);
-
-            CompNode node = new CompNode();
-            node.instance_id = int.Parse(str_nodeinfo[0]);
-            node.name = str_nodeinfo[1];
-			node.contain_enable = str_nodeinfo[2] == "1" ? true : false;
-            node.enabled = str_nodeinfo[3] == "1" ? true : false;
-            arr_nodes[i] = node;
-        }
-
-        return arr_nodes;
+    public static void Log(NetServer server, string log) {
+        Cmd cmd = new Cmd();
+        cmd.WriteNetCmd(NetCmd.S2C_Log);
+        cmd.WriteString(log);
+        server.SendCommand(cmd);
     }
 }
 
 
 public static class GameRunTimeDataSet {
-    public static Dictionary<int, GameObject> ms_gameObjectDict = null;
+    public static void InitDataSet() {
+        ms_gameObjectDict.Clear();
+        ms_componentDict.Clear();
+    }
+
+    public static void AddGameObject(GameObject obj) {
+        int nInstanceID = obj.GetInstanceID();
+        if (!ms_gameObjectDict.ContainsKey(nInstanceID)) {
+            ms_gameObjectDict.Add(nInstanceID, obj);
+        }
+    }
+
+    public static bool TryGetGameObject(int nInstanceID, out GameObject go) {
+        return ms_gameObjectDict.TryGetValue(nInstanceID, out go);
+    }
+
+    public static void AddComponent(Component comp) {
+        int nInstanceID = comp.GetInstanceID();
+        if (!ms_componentDict.ContainsKey(nInstanceID)) {
+            ms_componentDict.Add(nInstanceID, comp);
+        }
+    }
+
+    public static bool TryGetComponent(int nInstanceID, out Component comp) {
+        return ms_componentDict.TryGetValue(nInstanceID, out comp);
+    }
+
+    public static Dictionary<int, GameObject> ms_gameObjectDict = new Dictionary<int, GameObject>();
+    public static Dictionary<int, Component> ms_componentDict = new Dictionary<int, Component>();
+
+    //public static Dictionary<int, RDGameObject> ms_rdgameobjectDict = new Dictionary<int, RDGameObject>();
+
     public static Dictionary<int, ObjNode> ms_nodeDict = null;
-    public static ObjNode ms_rootObj = null;
+    //public static Dictionary<int, Component> ms_componentDict = null;
 }
 
 public static class ShowPanelDataSet {
-    public static Dictionary<int, ObjNode> ms_objNodeDict = null;
+    public static void InitDataSet() {
+        ms_rdgameobjectDict.Clear();
+        ms_lstRootRDObjs.Clear();
+    }
+
+    public static void AddRdGameObject(RDGameObject rd) {
+        int nInstanceID = rd.nInstanceID;
+        if (!ms_rdgameobjectDict.ContainsKey(nInstanceID)) {
+            ms_rdgameobjectDict.Add(nInstanceID, rd);
+        }
+        if (rd.nParentID == -1) {
+            ms_lstRootRDObjs.Add(rd);
+        }
+    }
+
+    public static bool TryGetRDGameObject(int nInstanceID, out RDGameObject rd) {
+        return ms_rdgameobjectDict.TryGetValue(nInstanceID, out rd);
+    }
+
+    public static Dictionary<int, RDGameObject> ms_rdgameobjectDict = new Dictionary<int, RDGameObject>();
+    public static List<RDGameObject> ms_lstRootRDObjs = new List<RDGameObject>();
+
+    //public static List<string> AllFolderPath = new List<string>();
+    public static Dictionary<int, ObjNode> ms_objNodeDict = new Dictionary<int, ObjNode>();
+    public static List<CompNode> select_node_components = new List<CompNode>();
+    public static GameObject ms_gameObj = null;
+    public static Component ms_component = null;
     public static ObjNode ms_rootObj = null;
+    public static bool hasCustomProperty = false;
+
 
 	public static void ClearAllData() {
 		if (ms_objNodeDict != null) {
@@ -215,5 +257,8 @@ public static class ShowPanelDataSet {
 			ms_rootObj.Clear();
 			ms_rootObj = null;
 		}
+        if (ms_gameObj != null) {
+            MonoBehaviour.DestroyImmediate(ms_gameObj);
+        }
 	}
 }
