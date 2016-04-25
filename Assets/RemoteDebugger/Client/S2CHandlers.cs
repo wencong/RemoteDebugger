@@ -44,6 +44,8 @@ public class S2CHandlers {
         string data = c.ReadString();
 
         try {
+			ShowPanelDataSet.InitDataSet();
+
             RDGameObject[] arrRdObjs = RDDataBase.Deserializer<RDGameObject[]>(data);
             for (int i = 0; i < arrRdObjs.Length; ++i) {
                 ShowPanelDataSet.AddRdGameObject(arrRdObjs[i]);
@@ -62,7 +64,6 @@ public class S2CHandlers {
     }
 
     public bool S2C_SetObjActive(NetCmd cmd, Cmd c) {
-
         int id = c.ReadInt32();
         bool active = c.ReadInt32() == 1 ? true : false;
         ObjNode cacheNode = null;
@@ -75,17 +76,20 @@ public class S2CHandlers {
     }
 
     public bool S2C_QueryComponent(NetCmd cmd, Cmd c) {
-
         string data = c.ReadString();
         try {
             RDComponent[] rdComps = RDDataBase.Deserializer<RDComponent[]>(data);
+
+			for (int i = 0; i < rdComps.Length; ++i) {
+				ShowPanelDataSet.AddRdComponent(rdComps[i]);
+			}
+
+			ShowPanelDataSet.ms_currentSelectComps = rdComps;
         }
         catch (Exception ex) {
             Debug.LogException(ex);
         }
         //ShowPanelDataSet.select_node_components.Add(JsonMapper.ToObject<CompNode>(data));
-
-
         if (OnUpdateData != null) {
             OnUpdateData();
         }

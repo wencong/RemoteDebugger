@@ -63,9 +63,9 @@ public class RDComponent {
 
     public RDComponent(Component comp) {
         this.nInstanceID = comp.GetInstanceID();
-        this.szName = comp.name;
+		this.szName = comp.GetType().ToString();
 
-        if (comp.ContainProperty("enable")) {
+        if (comp.ContainProperty("enabled")) {
             bContainEnable = true;
             bEnable = comp.GetValue<bool>("enabled");
         }
@@ -73,6 +73,21 @@ public class RDComponent {
             bContainEnable = bEnable = false;
         }
     }
+
+	public void OnGUI() {
+		GUILayout.BeginHorizontal();
+
+		if(!bContainEnable) {
+			GUILayout.Label("", GUILayout.Width(25));
+		}
+		else {
+			GUILayout.Toggle(bEnable, "", GUILayout.Width(25));
+		}
+
+		GUILayout.Button(szName);
+
+		GUILayout.EndHorizontal();
+	}
 }
 
 public class RDProperty {
@@ -168,8 +183,6 @@ public class ObjNode {
 }
 
 public class Util {
-    private static StringBuilder sb = new StringBuilder(4096 * 4);
-
     public static void Log(NetServer server, string log) {
         Cmd cmd = new Cmd();
         cmd.WriteNetCmd(NetCmd.S2C_Log);
@@ -220,6 +233,9 @@ public static class ShowPanelDataSet {
     public static void InitDataSet() {
         ms_rdgameobjectDict.Clear();
         ms_lstRootRDObjs.Clear();
+
+		ms_currentSelectComps = null;
+		ms_rdComponentDict.Clear();
     }
 
     public static void AddRdGameObject(RDGameObject rd) {
@@ -236,8 +252,21 @@ public static class ShowPanelDataSet {
         return ms_rdgameobjectDict.TryGetValue(nInstanceID, out rd);
     }
 
+	public static void AddRdComponent(RDComponent rdComp) {
+		int nInstanceID = rdComp.nInstanceID;
+		if (ms_rdComponentDict.ContainsKey(nInstanceID)) {
+			ms_rdComponentDict[nInstanceID] = rdComp;
+		}
+		else {
+			ms_rdComponentDict.Add(nInstanceID, rdComp);
+		}
+	}
+
     public static Dictionary<int, RDGameObject> ms_rdgameobjectDict = new Dictionary<int, RDGameObject>();
     public static List<RDGameObject> ms_lstRootRDObjs = new List<RDGameObject>();
+
+	public static Dictionary<int, RDComponent> ms_rdComponentDict = new Dictionary<int, RDComponent>();
+	public static RDComponent[] ms_currentSelectComps = null;
 
     //public static List<string> AllFolderPath = new List<string>();
     public static Dictionary<int, ObjNode> ms_objNodeDict = new Dictionary<int, ObjNode>();

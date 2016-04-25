@@ -85,7 +85,7 @@ public class C2SHandlers {
         GameObject gameobject = null;
 
         if (GameRunTimeDataSet.TryGetGameObject(rd.nInstanceID, out gameobject)) {
-
+			
             Component[] comps = gameobject.GetComponents<Component>();
             RDComponent[] rdComps = new RDComponent[comps.Length];
 

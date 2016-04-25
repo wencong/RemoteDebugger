@@ -99,11 +99,24 @@ public class HierarchyPanel : EditorWindow{
     }
 
     private void ShowComponentPanel() {
+		if (select_obj == null || ShowPanelDataSet.ms_currentSelectComps == null) {
+			return;
+		}
+
         GUILayout.BeginVertical("Box", GUILayout.Width(300));
+
         scroll_view_nodestatus_pos = GUILayout.BeginScrollView(scroll_view_nodestatus_pos);
-        ShowNodeStatus();
+
+		select_obj.bActive = GUILayout.Toggle(select_obj.bActive, select_obj.szName);
+
+		for (int i = 0; i < ShowPanelDataSet.ms_currentSelectComps.Length; ++i) {
+			RDComponent rdComp = ShowPanelDataSet.ms_currentSelectComps[i];
+
+			rdComp.OnGUI();
+		}
         GUILayout.EndScrollView();
-        GUILayout.EndVertical();
+        
+		GUILayout.EndVertical();
     }
 
 
@@ -212,7 +225,7 @@ public class HierarchyPanel : EditorWindow{
     }
 
     private void ShowNodeStatus() {
-        if (select_node == null || select_node.instance_id == 0) {
+		if (select_obj == null) {
             return;
         }
         GUILayout.BeginHorizontal("box");
