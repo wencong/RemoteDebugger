@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using UnityEngine;
 using LitJson;
 
@@ -12,7 +13,29 @@ public class RDDataBase {
     }
 
     public static T Deserializer<T>(string data){
-        return JsonMapper.ToObject<T>(data);
+        System.Object result = null;
+
+        result = JsonMapper.ToObject<T>(data);
+
+        if (typeof(T).Equals(typeof(RDProperty).MakeArrayType())) {
+
+            foreach (RDProperty rdProperty in result as RDProperty[])
+                if (rdProperty.isUnityBaseType) {
+                    Type PropertyType = Type.GetType(rdProperty.szTypeName + ", UnityEngine");
+
+                if (PropertyType == null) {
+                    return default(T);
+                }
+
+                ParameterInfo[] pinfos = null;
+                MethodInfo mi = typeof(JsonMapper).GetMethods().First(m => m.Name.Equals("ToObject") && m.IsGenericMethod
+                    && (pinfos = m.GetParameters()).Length == 1
+                    && pinfos[0].ParameterType.Equals(typeof(string))).MakeGenericMethod(PropertyType);
+                rdProperty.value = mi.Invoke(null, new System.Object[] { rdProperty.value });
+            }
+        }
+
+        return (T)result;
     }
 }
 
@@ -20,6 +43,9 @@ public class RDGameObject {
     public int nInstanceID;
     public string szName;
     public bool bActive;
+    public bool bStatic;
+    public string bTag;
+    public int bLayer;
 
     public int nParentID;
     public int[] arrChildren;
@@ -34,6 +60,9 @@ public class RDGameObject {
         this.nInstanceID = gameobject.GetInstanceID();
         this.szName  = gameobject.name;
         this.bActive = gameobject.activeSelf;
+        this.bStatic = gameobject.isStatic;
+        this.bTag = gameobject.tag;
+        this.bLayer = gameobject.layer;
 
         if (gameobject.transform.parent != null) {
             this.nParentID = gameobject.transform.parent.gameObject.GetInstanceID();
@@ -75,6 +104,7 @@ public class RDComponent {
     }
 
 	public void OnGUI() {
+#if UNITY_EDITOR
 		GUILayout.BeginHorizontal();
 
 		if(!bContainEnable) {
@@ -87,14 +117,99 @@ public class RDComponent {
 		GUILayout.Button(szName);
 
 		GUILayout.EndHorizontal();
-	}
+#endif
+    }
 }
 
 public class RDProperty {
+    public int nComponentID = 0;
 
+    public string szTypeName;
+
+    public string szName;
+
+    public System.Object value;
+
+    public bool isEnum = false;
+
+    public bool isUnityBaseType = false;
+    public RDProperty() { 
+
+    }
+
+    public RDProperty(Component comp, MemberInfo mi) {
+
+        this.nComponentID = comp.GetInstanceID();
+        Type t = null;
+
+        if (mi.MemberType.Equals(MemberTypes.Property)) {
+            PropertyInfo pi = (PropertyInfo)mi;
+            t = pi.PropertyType;
+            this.szTypeName = pi.PropertyType.ToString();
+            this.szName = pi.Name;
+            this.value = pi.GetValue(comp, null);
+        }
+
+        if (mi.MemberType.Equals(MemberTypes.Field)) {
+            FieldInfo fi = (FieldInfo)mi;
+            t = fi.FieldType;
+            this.szTypeName = fi.FieldType.ToString();
+            this.szName = fi.Name;
+            this.value = fi.GetValue(comp);
+        }
+
+        #region GetValue
+        if (t.Equals(typeof(Material))) {
+            //this.value = (comp as Renderer).sharedMaterial;
+            //this.value = pi.GetValue(comp, null);
+            if (this.value != null) {
+                this.value = (this.value as Material).name.Replace(" (Instance)", "");
+            }
+
+            else this.value = "null";
+        }
+
+        else if (t.Equals(typeof(Material).MakeArrayType())) {
+
+            //this.value = (comp as Renderer).sharedMaterials;
+            //this.value = pi.GetValue(comp, null);
+            string s = "";
+            string materials = "";
+
+            for (int i = 0; i < (this.value as Array).Length; i++) {
+
+                if ((this.value as Array).GetValue(i) != null) {
+                    s = ((this.value as Array).GetValue(i) as Material).name.Replace(" (Instance)", "");
+                }
+
+                else s = "null";
+                materials = materials + s + ",";
+            }
+
+            materials = materials.Substring(0, materials.Length - 1);
+            this.value = materials;
+        }
+        else if (t.IsEnum) {
+            //this.value = pi.GetValue(comp, null);
+            this.value = this.value.ToString();
+            this.isEnum = true;
+        }
+
+        else if (t.IsValueType && !t.IsPrimitive || t.Equals(typeof(RectOffset))) {
+
+            this.isUnityBaseType = true;
+            //System.Object value = pi.GetValue(comp, null);
+            this.value = JsonMapper.ToJson(this.value);
+        }
+
+        /*else {
+            this.value = pi.GetValue(comp, null);
+        }*/
+        #endregion
+    }
 }
 
-public class CompProperty {
+/*public class CompProperty {
     public string compType;
     public string type;
     public string name;
@@ -113,18 +228,31 @@ public class CompProperty {
     public T JsonToObject<T>(string data) {
         T result = JsonMapper.ToObject<T>(data);
         return result;
-    } 
+    }
+}*/
+
+public static class Util {
+    public static Type GetType(string szTypeName) {
+        Type T = null;
+
+        if (szTypeName.Contains("UnityEngine")) {
+            T = Type.GetType(szTypeName + ",UnityEngine");
+        }
+        else {
+            T = Type.GetType(szTypeName);
+        }
+        return T;
+    }
 }
 
-
-public class CompNode {
+/*public class CompNode {
     public int instance_id;
     public string name;
 	public bool contain_enable;
     public bool enabled;
-}
+}*/
 
-public class ObjNode {
+/*public class ObjNode {
     public int instance_id;
     public string name;
     public bool active;
@@ -180,17 +308,7 @@ public class ObjNode {
         }
         self_childrenID.Clear();
     }
-}
-
-public class Util {
-    public static void Log(NetServer server, string log) {
-        Cmd cmd = new Cmd();
-        cmd.WriteNetCmd(NetCmd.S2C_Log);
-        cmd.WriteString(log);
-        server.SendCommand(cmd);
-    }
-}
-
+}*/
 
 public static class GameRunTimeDataSet {
     public static void InitDataSet() {
@@ -216,16 +334,17 @@ public static class GameRunTimeDataSet {
         }
     }
 
-    public static bool TryGetComponent(int nInstanceID, out Component comp) {
+    public static bool TryGetComponent(int nInstanceID, out UnityEngine.Component comp) {
         return ms_componentDict.TryGetValue(nInstanceID, out comp);
     }
+
 
     public static Dictionary<int, GameObject> ms_gameObjectDict = new Dictionary<int, GameObject>();
     public static Dictionary<int, Component> ms_componentDict = new Dictionary<int, Component>();
 
     //public static Dictionary<int, RDGameObject> ms_rdgameobjectDict = new Dictionary<int, RDGameObject>();
 
-    public static Dictionary<int, ObjNode> ms_nodeDict = null;
+    //public static Dictionary<int, ObjNode> ms_nodeDict = null;
     //public static Dictionary<int, Component> ms_componentDict = null;
 }
 
@@ -234,8 +353,18 @@ public static class ShowPanelDataSet {
         ms_rdgameobjectDict.Clear();
         ms_lstRootRDObjs.Clear();
 
-		ms_currentSelectComps = null;
-		ms_rdComponentDict.Clear();
+        ms_rdComponentDict.Clear();
+
+        ms_currentSelectComps = null;
+        ms_remoteRDComponent = null;
+
+        if (ms_remoteGameObject == null) {
+            ms_remoteGameObject = new GameObject("_RemoteDebugger");
+            ms_remoteGameObject.SetActive(false);
+        }
+        if (ms_remoteComponent != null) {
+            GameObject.DestroyImmediate(ms_remoteComponent);
+        }
     }
 
     public static void AddRdGameObject(RDGameObject rd) {
@@ -262,32 +391,71 @@ public static class ShowPanelDataSet {
 		}
 	}
 
+    public static void AddRemoteComponent(string szComponentType) {
+        //Type t = Type.GetType(szComponentType + ",UnityEngine");
+
+        Type t = GetComponentType(szComponentType);
+
+        if (t == null || ms_remoteGameObject == null) {
+            return;
+        }
+        
+        if (ms_remoteGameObject.GetComponent(t) != null) {
+            return;
+        }
+
+        ms_remoteGameObject.AddComponent(t);
+    }
+
+    public static Type GetComponentType(string TypeName) {
+        Type T = Type.GetType(TypeName + ",UnityEngine");
+
+        if (T == null)
+            T = Type.GetType(TypeName + ",UnityEngine.UI");
+
+        if (T == null)
+            T = Type.GetType(TypeName + ",UnityEngine.Networking");
+
+        if (T == null)
+            T = Type.GetType(TypeName);
+
+        if (T == null)
+            return null;
+
+        else {
+            return T;
+        }
+    }
+
     public static Dictionary<int, RDGameObject> ms_rdgameobjectDict = new Dictionary<int, RDGameObject>();
     public static List<RDGameObject> ms_lstRootRDObjs = new List<RDGameObject>();
 
 	public static Dictionary<int, RDComponent> ms_rdComponentDict = new Dictionary<int, RDComponent>();
 	public static RDComponent[] ms_currentSelectComps = null;
+    public static RDProperty[] ms_currentSelectProperty = null;
+    public static RDGameObject ms_selectRDGameObject = null;
+    public static GameObject ms_remoteGameObject = null;
+    public static Component ms_remoteComponent = null;
+    public static RDComponent ms_remoteRDComponent = null;
+
+    public static int ms_gameObjHandleFlag = -1;
 
     //public static List<string> AllFolderPath = new List<string>();
-    public static Dictionary<int, ObjNode> ms_objNodeDict = new Dictionary<int, ObjNode>();
-    public static List<CompNode> select_node_components = new List<CompNode>();
-    public static GameObject ms_gameObj = null;
-    public static Component ms_component = null;
-    public static ObjNode ms_rootObj = null;
-    public static bool hasCustomProperty = false;
+    //public static Dictionary<int, ObjNode> ms_objNodeDict = new Dictionary<int, ObjNode>();
 
 
 	public static void ClearAllData() {
-		if (ms_objNodeDict != null) {
-			ms_objNodeDict.Clear();
-			ms_objNodeDict = null;
+        if (ms_rdgameobjectDict.Count > 0) {
+            ms_rdgameobjectDict.Clear();
 		}
-		if (ms_rootObj != null) {
-			ms_rootObj.Clear();
-			ms_rootObj = null;
-		}
-        if (ms_gameObj != null) {
-            MonoBehaviour.DestroyImmediate(ms_gameObj);
+        if (ms_lstRootRDObjs.Count > 0) {
+            ms_lstRootRDObjs.Clear();
+        }
+        if (ms_rdComponentDict.Count > 0) {
+            ms_rdComponentDict.Clear();
+        }
+        if (ms_remoteGameObject != null) {
+            MonoBehaviour.DestroyImmediate(ms_remoteGameObject);
         }
 	}
 }

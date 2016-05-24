@@ -37,6 +37,9 @@ public enum NetCmd
     C2S_CmdBegin             = 1000,
     C2S_CmdQueryAllObjs,
     C2S_CmdSetObjActive,
+    C2S_CmdSetObjStatic,
+    C2S_CmdSetObjTag,
+    C2S_CmdSetObjLayer,
     C2S_QueryComponent,
     C2S_GetComponentProperty,
     C2S_EnableComponent,
@@ -46,6 +49,9 @@ public enum NetCmd
     S2C_CmdBegin             = 2000,
     S2C_CmdQueryAllObjs,
     S2C_CmdSetObjActive,
+    S2C_CmdSetObjStatic,
+    S2C_CmdSetObjTag,
+    S2C_CmdSetObjLayer,
     S2C_QueryComponent,
     S2C_GetComponentProperty,
     S2C_EnableComponent,
@@ -55,6 +61,7 @@ public enum NetCmd
 
     SV_CmdEnd,
 }
+
 
 
 

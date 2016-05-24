@@ -33,6 +33,18 @@ public class NetServer : IDisposable {
         }
     }
 
+    public void LogMsgToClient(string szMsg) {
+        try {
+            Cmd usCmd = new Cmd();
+            usCmd.WriteNetCmd(NetCmd.S2C_Log);
+            usCmd.WriteString(szMsg);
+            this.SendCommand(usCmd);
+        }
+        catch (Exception ex) {
+            Debug.LogException(ex);
+        }
+    } 
+
     public void Update() {
         if (tcp_client == null) {
             return;
@@ -55,11 +67,11 @@ public class NetServer : IDisposable {
                                 break;
                             case CmdExecResult.Failed:
                                 //Debug.Log("net cmd execution failed");
-                                Util.Log(this, "net cmd execution failed");
+                                LogMsgToClient("net cmd execution failed");
                                 break;
                             case CmdExecResult.HandlerNotFound:
                                 //Debug.Log("net cmd unknown");
-                                Util.Log(this, "net cmd unknown");
+                                LogMsgToClient("net cmd unknown");
                                 break;
                         }
                         

@@ -1,7 +1,4 @@
-System.Int32
-System.Single
 System.String
-System.Boolean
 UnityEngine.Vector2
 UnityEngine.Vector3
 UnityEngine.Vector4

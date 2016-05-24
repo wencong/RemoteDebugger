@@ -1,5 +1,11 @@
 UnityEngine.SkinnedMeshRenderer
 Blend Shape Weights
+AABB
+#####
+UnityEngine.ParticleSystemRenderer
+Use Light Probes
+Length Scale
+Velocity Scale
 #####
 UnityEngine.TrailRenderer
 Min Vertex Distance

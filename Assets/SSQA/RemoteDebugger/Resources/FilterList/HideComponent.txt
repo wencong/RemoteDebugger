@@ -5,6 +5,7 @@ UnityEngine.Rigidbody
 UnityEngine.Rigidbody2D
 UnityEngine.TerrainCollider
 UnityEngine.TargetJoint2D
+UnityEngine.NavMeshAgent
 UnityEngine.AudioSource
 UnityEngine.FlareLayer
 UnityEngine.GUILayer

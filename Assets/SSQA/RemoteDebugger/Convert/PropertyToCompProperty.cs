@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using LitJson;
 
-public class PropertyToCompProperty {
+/*public class PropertyToCompProperty {
     public CompProperty PropertyInfoToCompProperty(PropertyInfo PI, Component comp) {
             CompProperty compPropertyInfo = new CompProperty();
             compPropertyInfo.compType = comp.GetType().ToString();
@@ -45,11 +45,12 @@ public class PropertyToCompProperty {
 
             else if (PI.PropertyType.IsValueType && !PI.PropertyType.IsPrimitive) {
                 compPropertyInfo.isUnityBaseType = true;
-                compPropertyInfo.value = PI.GetValue(comp, null);
+                System.Object value = PI.GetValue(comp, null);
+                compPropertyInfo.value = JsonMapper.ToJson(value);
             }
 
             else compPropertyInfo.value = PI.GetValue(comp, null);
-
+        
             return compPropertyInfo;
     }
     
@@ -92,6 +93,6 @@ public class PropertyToCompProperty {
         else compPropertyInfo.value = FI.GetValue(comp);
         return compPropertyInfo;
     }
-}
+}*/
 
 

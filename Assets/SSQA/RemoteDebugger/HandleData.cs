@@ -8,7 +8,7 @@ using UnityEngine;
 using LitJson;
 
 
-static public class HandleData {
+/*static public class HandleData {
     static public List<string> ResourcesFolderPaths = new List<string>();
     static public List<CompProperty> GetComponentProperty(Component component) {
         List<PropertyInfo> pis = new List<PropertyInfo>();
@@ -23,20 +23,7 @@ static public class HandleData {
                 pis.Remove(pis[i]);
                 continue;
             }
-            if (!(FilterList.AvailableTypeList.Find(s => s.Equals(pis[i].PropertyType.ToString())) != null || pis[i].PropertyType.IsEnum)) {
-                pis.Remove(pis[i]);
-                continue;
-            }
-            if (pis[i].PropertyType == typeof(double))
-                if (Double.IsInfinity((double)pis[i].GetValue(comp, null))) {
-                    pis.Remove(pis[i]);
-                    continue;
-                }
-            if (pis[i].PropertyType == typeof(Single))
-                if (Single.IsInfinity((Single)pis[i].GetValue(comp, null))) {
-                    pis.Remove(pis[i]);
-                    continue;
-                }
+            
         }
         
         List<CompProperty> CompPropertyInfo = new List<CompProperty>();
@@ -52,8 +39,10 @@ static public class HandleData {
         }
         for (int i = 0; i < fis.Count; i++) {
             tempCompPropertyInfo = convert.FieldInfoToCompProperty(fis[i], comp);
-            if (tempCompPropertyInfo != null)
+            if (tempCompPropertyInfo != null) {
                 CompPropertyInfo.Add(tempCompPropertyInfo);
+            }
+                
         }
         return CompPropertyInfo;
     }
@@ -232,4 +221,4 @@ static public class HandleData {
         }
     } 
 
-}
+}*/
