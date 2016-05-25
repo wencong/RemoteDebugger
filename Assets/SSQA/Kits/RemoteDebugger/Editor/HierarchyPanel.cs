@@ -11,7 +11,7 @@ using LitJsonEx;
 
 public class HierarchyPanel : EditorWindow {
 
-    [MenuItem("Tools/RemoteDebugger/Hierarchy")]
+    [MenuItem("SSQA/RemoteDebugger")]
     public static void OnShowWindow() {
         GetWindow<HierarchyPanel>().Show();
     }
