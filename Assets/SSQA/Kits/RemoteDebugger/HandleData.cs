@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
-using LitJson;
+using LitJsonEx;
 
 
 /*static public class HandleData {

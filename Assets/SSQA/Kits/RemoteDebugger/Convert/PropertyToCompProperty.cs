@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using LitJson;
+using LitJsonEx;
 
 /*public class PropertyToCompProperty {
     public CompProperty PropertyInfoToCompProperty(PropertyInfo PI, Component comp) {

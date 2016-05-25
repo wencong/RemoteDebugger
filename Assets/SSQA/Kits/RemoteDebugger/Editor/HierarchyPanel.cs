@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
-using LitJson;
+using LitJsonEx;
 
 
 public class HierarchyPanel : EditorWindow {
@@ -117,8 +117,9 @@ public class HierarchyPanel : EditorWindow {
             confirmationWindow.GameObjHandle("Active flags");
 
             string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
-            
-            Cmd cmd = new Cmd();
+
+            Cmd cmd = new Cmd(szObj.Length);
+
             cmd.WriteNetCmd(NetCmd.C2S_CmdSetObjActive);
             cmd.WriteString(szObj);
             cmd.WriteInt32(ShowPanelDataSet.ms_gameObjHandleFlag);
@@ -140,7 +141,7 @@ public class HierarchyPanel : EditorWindow {
 
             string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
 
-            Cmd cmd = new Cmd();
+            Cmd cmd = new Cmd(szObj.Length);
             cmd.WriteNetCmd(NetCmd.C2S_CmdSetObjStatic);
             cmd.WriteString(szObj);
             cmd.WriteInt32(ShowPanelDataSet.ms_gameObjHandleFlag);
@@ -165,7 +166,7 @@ public class HierarchyPanel : EditorWindow {
 
             string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
 
-            Cmd cmd = new Cmd();
+            Cmd cmd = new Cmd(szObj.Length);
             cmd.WriteNetCmd(NetCmd.C2S_CmdSetObjTag);
             cmd.WriteString(szObj);
             cmd.WriteInt32(ShowPanelDataSet.ms_gameObjHandleFlag);
@@ -186,7 +187,7 @@ public class HierarchyPanel : EditorWindow {
 
             string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
 
-            Cmd cmd = new Cmd();
+            Cmd cmd = new Cmd(szObj.Length);
             cmd.WriteNetCmd(NetCmd.C2S_CmdSetObjLayer);
             cmd.WriteString(szObj);
             cmd.WriteInt32(ShowPanelDataSet.ms_gameObjHandleFlag);
@@ -353,7 +354,7 @@ public class HierarchyPanel : EditorWindow {
             select_obj = obj;
             string data = RDDataBase.Serializer<RDGameObject>(obj);
 
-            Cmd cmd = new Cmd();
+            Cmd cmd = new Cmd(data.Length);
             cmd.WriteNetCmd(NetCmd.C2S_QueryComponent);
             cmd.WriteString(data);
 

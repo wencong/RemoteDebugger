@@ -18,7 +18,7 @@ using System.Reflection;
 using UnityEngine;
 
 
-namespace LitJson
+namespace LitJsonEx
 {
     internal struct PropertyMetadata
     {

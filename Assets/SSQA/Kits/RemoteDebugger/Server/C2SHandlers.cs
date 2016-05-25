@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using LitJson;
+using LitJsonEx;
 
 public class C2SHandlers {
 	//private int buff_reverse_size = 200;
@@ -50,7 +50,6 @@ public class C2SHandlers {
 
         List<RDGameObject> rdGameObjects = new List<RDGameObject>();
         try {
-
             for (int i = 0; i < listGameObject.Count; i++) {
 
                 List<Transform> cTransforms = listGameObject[i].GetComponentsInChildren<Transform>(true).ToList();

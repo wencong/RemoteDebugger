@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using System.Reflection;
 using System.Collections.Generic;
 using UnityEngine;
-using LitJson;
+using LitJsonEx;
 
 public class S2CHandlers {
     private static S2CHandlers inst = null;

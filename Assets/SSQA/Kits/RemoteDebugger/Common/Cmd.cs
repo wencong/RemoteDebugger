@@ -59,7 +59,8 @@ public class CmdIOError : Exception
 public class Cmd {
 	public const int STRIP_NAME_MAX_LEN = 64;
 	public const int BUFFER_SIZE = 1024;
-	
+    public const int BUFFER_REVERSE = 200;
+
 	public Cmd()
 	{
 		_buffer = new byte[BUFFER_SIZE];
@@ -69,6 +70,10 @@ public class Cmd {
 	{
 		_buffer = given;
 	}
+
+    public Cmd(int nSize) {
+        _buffer = new byte[nSize + BUFFER_REVERSE];
+    }
 
 	public byte[] Buffer { get { return _buffer; }	}
 	public int WrittenLen { get { return _writeOffset; } }
