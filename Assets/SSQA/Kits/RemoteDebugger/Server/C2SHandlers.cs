@@ -23,11 +23,13 @@ public class C2SHandlers {
         if (net_server != null) {
             net_server.RegisterHandler(NetCmd.C2S_CmdQueryAllObjs, C2S_QueryAllObjs);
             net_server.RegisterHandler(NetCmd.C2S_CmdSetObjActive, C2S_SetObjectActive);
-            net_server.RegisterHandler(NetCmd.C2S_CmdSetObjStatic, C2S_SetObjectStatic);
-            net_server.RegisterHandler(NetCmd.C2S_CmdSetObjTag, C2S_SetObjectTag);
+
+            //net_server.RegisterHandler(NetCmd.C2S_CmdSetObjStatic, C2S_SetObjectStatic);
+            //net_server.RegisterHandler(NetCmd.C2S_CmdSetObjTag, C2S_SetObjectTag);
             net_server.RegisterHandler(NetCmd.C2S_CmdSetObjLayer, C2S_SetObjectLayer);
+
             net_server.RegisterHandler(NetCmd.C2S_QueryComponent, C2S_QueryComponents);
-            net_server.RegisterHandler(NetCmd.C2S_GetComponentProperty, C2SGetComponentProperty);
+            net_server.RegisterHandler(NetCmd.C2S_GetComponentProperty, C2S_GetComponentProperty);
             net_server.RegisterHandler(NetCmd.C2S_EnableComponent, C2SEnableComponent);
             net_server.RegisterHandler(NetCmd.C2S_CustomComponent, C2SCustomComponent);
             this.net_server = net_server;
@@ -36,46 +38,40 @@ public class C2SHandlers {
 
     private bool C2S_QueryAllObjs(NetCmd cmd, Cmd c) {
         GameRunTimeDataSet.InitDataSet();
+
+        List<GameObject> _RootGameObjects = new List<GameObject>();
 #if UNITY_5_3_2 
         Scene currentScene = SceneManager.GetActiveScene();
-        List<GameObject> listGameObject = currentScene.GetRootGameObjects().ToList();
-
-#elif UNITY_5_3_2_OR_NEWER
-        Scene currentScene = SceneManager.GetActiveScene();
-        List<GameObject> listGameObject = currentScene.GetRootGameObjects().ToList();
-
+        _RootGameObjects = currentScene.GetRootGameObjects().ToList();
 #else
-        List<GameObject> listGameObject = GameObject.FindObjectsOfType<GameObject>().ToList();
-#endif
-
-        List<RDGameObject> rdGameObjects = new List<RDGameObject>();
-        try {
-            for (int i = 0; i < listGameObject.Count; i++) {
-
-                List<Transform> cTransforms = listGameObject[i].GetComponentsInChildren<Transform>(true).ToList();
-
-                foreach (Transform cTransform in cTransforms) {
-
-                    if (listGameObject.Find(obj => obj.GetInstanceID().Equals(cTransform.gameObject.GetInstanceID())) == null)
-                        listGameObject.Add(cTransform.gameObject);
-                }
+        Transform[] arrTransforms = Transform.FindObjectsOfType<Transform>();
+        for (int i = 0; i < arrTransforms.Length; ++i) {
+            Transform tran = arrTransforms[i];
+            if (tran.parent == null) {
+                _RootGameObjects.Add(tran.gameObject);
             }
+        }
+#endif
+        List<RDGameObject> rdGameObjects = new List<RDGameObject>();
 
-            foreach (GameObject gameObj in listGameObject) {
-
-                GameRunTimeDataSet.AddGameObject(gameObj);
-
-                rdGameObjects.Add(new RDGameObject(gameObj));
-
+        try {
+            for (int i = 0; i < _RootGameObjects.Count; i++) {
+                GameObject _root = _RootGameObjects[i];
+                Transform[] trans = _root.GetComponentsInChildren<Transform>(true);
+                for (int j = 0; j < trans.Length; ++j ) {
+                    Transform tran = trans[j];
+                    rdGameObjects.Add(new RDGameObject(tran.gameObject));
+                    GameRunTimeDataSet.AddGameObject(tran.gameObject);
+                }
             }
         }
         catch (Exception ex) {
             net_server.LogMsgToClient(ex.ToString());
         }
-        
+
         try {
             string rdGameObjList = RDDataBase.Serializer<RDGameObject[]>(rdGameObjects.ToArray());
-            Cmd usCmd = new Cmd(new byte[rdGameObjList.Length + 200]);
+            Cmd usCmd = new Cmd(rdGameObjList.Length);
 
             usCmd.WriteNetCmd(NetCmd.S2C_CmdQueryAllObjs);
             usCmd.WriteString(rdGameObjList);
@@ -91,48 +87,31 @@ public class C2SHandlers {
     }
 
     private bool C2S_SetObjectActive(NetCmd cmd, Cmd c) {
-        string szRecv = c.ReadString();
-        int HandleFlag = c.ReadInt32();
-
-        RDGameObject rdGameObj = RDDataBase.Deserializer<RDGameObject>(szRecv);
-
-        GameObject gameObject = null;
-        GameRunTimeDataSet.TryGetGameObject(rdGameObj.nInstanceID, out gameObject);
-
         try {
-            switch (HandleFlag) {
-                case 0: {
-                        gameObject.SetAllChildrenProperty("activeSelf", rdGameObj.bActive);
-                        break;
-                    }
-                case 1: {
-                        gameObject.SetActive(rdGameObj.bActive);
-                        break;
-                    }
-            }
+            string szRecv = c.ReadString();
+
+            RDGameObject rdGameObj = RDDataBase.Deserializer<RDGameObject>(szRecv);
+
+            GameObject gameObject = null;
+            GameRunTimeDataSet.TryGetGameObject(rdGameObj.nInstanceID, out gameObject);
+
+            gameObject.SetActive(rdGameObj.bActive);
+
+            string szSend = RDDataBase.Serializer<RDGameObject>(new RDGameObject(gameObject));
+
+            Cmd usCmd = new Cmd(szSend.Length);
+            usCmd.WriteNetCmd(NetCmd.S2C_CmdSetObjActive);
+            usCmd.WriteString(szSend);
+            this.net_server.SendCommand(usCmd);
         }
         catch (Exception ex) {
             net_server.LogMsgToClient(ex.ToString());
         }
 
-        List<RDGameObject> rdGameObjs = new List<RDGameObject>();
-
-        List<Transform> cTransforms = gameObject.GetComponentsInChildren<Transform>(true).ToList();
-
-        foreach (Transform cTransform in cTransforms) {
-            rdGameObjs.Add(new RDGameObject(cTransform.gameObject));
-        }
-
-        string szRdGameObjs = RDDataBase.Serializer<List<RDGameObject>>(rdGameObjs);
-        
-        Cmd usCmd = new Cmd();
-        usCmd.WriteNetCmd(NetCmd.S2C_CmdSetObjActive);
-        usCmd.WriteString(szRdGameObjs);
-        this.net_server.SendCommand(usCmd);
-
         return true;
     }
 
+    /*
     private bool C2S_SetObjectStatic(NetCmd cmd, Cmd c) {
         string szRecv = c.ReadString();
         int HandleFlag = c.ReadInt32();
@@ -189,11 +168,11 @@ public class C2SHandlers {
         try {
             switch (HandleFlag) {
                 case 0: {
-                        gameObject.SetAllChildrenProperty("tag", rdGameObj.bTag);
+                        gameObject.SetAllChildrenProperty("tag", rdGameObj.szTag);
                         break;
                     }
                 case 1: {
-                        gameObject.tag = rdGameObj.bTag;
+                        gameObject.tag = rdGameObj.szTag;
                         break;
                     }
             }
@@ -212,87 +191,128 @@ public class C2SHandlers {
 
         string szRdGameObjs = RDDataBase.Serializer<List<RDGameObject>>(rdGameObjs);
 
-        Cmd usCmd = new Cmd();
+        Cmd usCmd = new Cmd(szRdGameObjs.Length);
         usCmd.WriteNetCmd(NetCmd.S2C_CmdSetObjTag);
         usCmd.WriteString(szRdGameObjs);
         this.net_server.SendCommand(usCmd);
         return true;
 
     }
+     * */
+
+    private bool BatchModify<T1, T2>(T1[] objs, string szName, T2 value) {
+        try {
+            for (int i = 0; i < objs.Length; ++i) {
+                T1 obj = objs[i];
+
+                PropertyInfo propertyInfo = obj.GetType().GetProperty(szName);
+                FieldInfo fieldInfo = obj.GetType().GetField(szName);
+
+                if (propertyInfo != null) {
+                    propertyInfo.SetValue(obj, value, null);
+                }
+                else if (fieldInfo != null) {
+                    fieldInfo.SetValue(obj, value);
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        catch (Exception ex) {
+            net_server.LogMsgToClient(ex.ToString());
+            return false;
+        }
+        return true;
+    }
 
     private bool C2S_SetObjectLayer(NetCmd cmd, Cmd c) {
-        string szRecv = c.ReadString();
-        int HandleFlag = c.ReadInt32();
+        try {
+            string szRecv = c.ReadString();
+            BatchOption eBatchOption = (BatchOption)c.ReadInt32();
 
-        RDGameObject rdGameObj = RDDataBase.Deserializer<RDGameObject>(szRecv);
+            RDGameObject rdGameObj = RDDataBase.Deserializer<RDGameObject>(szRecv);
 
-        GameObject gameObject = null;
-        GameRunTimeDataSet.TryGetGameObject(rdGameObj.nInstanceID, out gameObject);
+            GameObject gameObject = null;
+            GameRunTimeDataSet.TryGetGameObject(rdGameObj.nInstanceID, out gameObject);
 
-        try{
-            
-            switch (HandleFlag) {
-                case 0: {
-                        gameObject.SetAllChildrenProperty("layer", rdGameObj.bLayer);
-                        break;
-                    }
-                case 1: {
-                        gameObject.layer = rdGameObj.bLayer;
-                        break;
-                    }
+            GameObject[] arrayGameObjectBeModify = null;
+
+            switch (eBatchOption) {
+                case BatchOption.eOnlySelf: {
+                    //gameObject.layer = rdGameObj.nLayer;
+                    arrayGameObjectBeModify = new GameObject[1] { gameObject };
+                    break;
+                }
+                case BatchOption.eContainChildren: {
+                    //gameObject.SetValueBatch<int>("layer", rdGameObj.nLayer);
+                    arrayGameObjectBeModify = gameObject.GetAllChildren();
+                    break;
+                }
+            }
+            /*
+        }
+        catch (Exception ex) {
+            net_server.LogMsgToClient(ex.ToString());
+        }
+
+        try {*/
+            BatchModify<GameObject, int>(arrayGameObjectBeModify, "layer", rdGameObj.nLayer);
+
+            RDGameObject[] rdGameObjs = new RDGameObject[arrayGameObjectBeModify.Length];
+
+            for (int i = 0; i < rdGameObjs.Length; ++i ) {
+                rdGameObjs[i] = new RDGameObject(arrayGameObjectBeModify[i]);
+            }
+
+            string szRdGameObjs = RDDataBase.Serializer<RDGameObject[]>(rdGameObjs);
+
+            Cmd usCmd = new Cmd(szRdGameObjs.Length);
+            usCmd.WriteNetCmd(NetCmd.S2C_CmdSetObjLayer);
+            usCmd.WriteString(szRdGameObjs);
+            this.net_server.SendCommand(usCmd);
+        }
+        catch (Exception ex) {
+            net_server.LogMsgToClient(ex.ToString());
+        }
+
+        return true;
+    }
+
+    private bool C2S_QueryComponents(NetCmd cmd, Cmd c) {
+        try {
+            string szRecv = c.ReadString();
+
+            RDGameObject rd = RDDataBase.Deserializer<RDGameObject>(szRecv);
+
+            GameObject gameobject = null;
+
+            if (GameRunTimeDataSet.TryGetGameObject(rd.nInstanceID, out gameobject)) {
+
+                Component[] comps = gameobject.GetComponents<Component>();
+                RDComponent[] rdComps = new RDComponent[comps.Length];
+
+                for (int i = 0; i < comps.Length; ++i) {
+                    rdComps[i] = new RDComponent(comps[i]);
+                    GameRunTimeDataSet.AddComponent(comps[i]);
+                }
+
+                string szCompsInfo = RDDataBase.Serializer<RDComponent[]>(rdComps);
+
+                Cmd usCmd = new Cmd();
+                usCmd.WriteNetCmd(NetCmd.S2C_QueryComponent);
+                usCmd.WriteString(szCompsInfo);
+                this.net_server.SendCommand(usCmd);
             }
         }
         catch (Exception ex) {
             net_server.LogMsgToClient(ex.ToString());
         }
         
-        List<RDGameObject> rdGameObjs = new List<RDGameObject>();
-
-        List<Transform> cTransforms = gameObject.GetComponentsInChildren<Transform>(true).ToList();
-
-        foreach (Transform cTransform in cTransforms) {
-            rdGameObjs.Add(new RDGameObject(cTransform.gameObject));
-        }
-
-        string szRdGameObjs = RDDataBase.Serializer<List<RDGameObject>>(rdGameObjs);
-
-        Cmd usCmd = new Cmd();
-        usCmd.WriteNetCmd(NetCmd.S2C_CmdSetObjLayer);
-        usCmd.WriteString(szRdGameObjs);
-        this.net_server.SendCommand(usCmd);
-
         return true;
     }
 
-    private bool C2S_QueryComponents(NetCmd cmd, Cmd c) {
-        string szRecv = c.ReadString();
-
-        RDGameObject rd = RDDataBase.Deserializer<RDGameObject>(szRecv);
-
-        GameObject gameobject = null;
-
-        if (GameRunTimeDataSet.TryGetGameObject(rd.nInstanceID, out gameobject)) {
-			
-            Component[] comps = gameobject.GetComponents<Component>();
-            RDComponent[] rdComps = new RDComponent[comps.Length];
-
-            for (int i = 0; i < comps.Length; ++i) {
-                rdComps[i] = new RDComponent(comps[i]);
-                GameRunTimeDataSet.AddComponent(comps[i]);
-            }
-
-            string szCompsInfo = RDDataBase.Serializer<RDComponent[]>(rdComps);
-
-            Cmd usCmd = new Cmd();
-            usCmd.WriteNetCmd(NetCmd.S2C_QueryComponent);
-            usCmd.WriteString(szCompsInfo);
-            this.net_server.SendCommand(usCmd);
-        }
-
-        return true;
-    }
-
-    private bool C2SGetComponentProperty(NetCmd cmd, Cmd c) {
+    private bool C2S_GetComponentProperty(NetCmd cmd, Cmd c) {
         try {
             string szRecv = c.ReadString();
 
@@ -303,7 +323,7 @@ public class C2SHandlers {
                 return false;
             }
 
-            RDProperty[] rdPropertys = component.GetAllProperty();
+            RDProperty[] rdPropertys = component.GetPropertys();
 
             
             string szSend = RDDataBase.Serializer<RDProperty[]>(rdPropertys);

@@ -11,6 +11,27 @@ using LitJsonEx;
 
 public class HierarchyPanel : EditorWindow {
 
+    [MenuItem("SSQA/ParentName")]
+    public static void ParentName() {
+        if (Selection.activeGameObject.transform.parent != null) {
+            Debug.Log(Selection.activeGameObject.transform.parent.name);
+        }
+        else {
+            Debug.Log("null");
+        }
+    }
+
+    [MenuItem("SSQA/FindAllObject")]
+    public static void FindAllObject() {
+        GameObject[] listGameObject = GameObject.FindObjectsOfType<GameObject>();
+    }
+
+    [MenuItem("SSQA/FindAllTransform")]
+    public static void FindAllTransform() {
+        Transform[] listTransform = Transform.FindObjectsOfType<Transform>();
+        Transform[] aa = Selection.activeGameObject.GetComponentsInChildren<Transform>();
+    }
+
     [MenuItem("SSQA/RemoteDebugger")]
     public static void OnShowWindow() {
         GetWindow<HierarchyPanel>().Show();
@@ -93,105 +114,106 @@ public class HierarchyPanel : EditorWindow {
         GUILayout.EndVertical();
     }
 
-    private void ShowComponentPanel() {
-        if (select_obj == null || ShowPanelDataSet.ms_currentSelectComps == null) {
-            return;
-        }
+    public static BatchOption DisplayeBatchOptionDialog(string propertyName) {
+        int nRet = EditorUtility.DisplayDialogComplex("Change " + propertyName,
+                                        "Do you want to change the " + propertyName + " for all the child",
+                                        "Yes,change children", "No,this object only", "Cancel");
 
-        GUILayout.BeginVertical("Box", GUILayout.Width(300));
+        return (BatchOption)nRet;
+    }
 
-        scroll_view_nodestatus_pos = GUILayout.BeginScrollView(scroll_view_nodestatus_pos);
+    private void BatchModify<T>(RDGameObject rdObj, string name, T value) {
 
+    }
+
+    private void ShowGameObjectHeadInfo(RDGameObject select_obj) {
         GUILayout.BeginVertical("Box");
 
         GUILayout.BeginHorizontal();
 
-        #region SetGameObjectActive
-
         bool bActive = select_obj.bActive;
-
         select_obj.bActive = GUILayout.Toggle(select_obj.bActive, select_obj.szName);
-
+        #region SetGameObjectActive
         if (bActive != select_obj.bActive) {
-
-            confirmationWindow.GameObjHandle("Active flags");
-
             string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
 
             Cmd cmd = new Cmd(szObj.Length);
 
             cmd.WriteNetCmd(NetCmd.C2S_CmdSetObjActive);
             cmd.WriteString(szObj);
-            cmd.WriteInt32(ShowPanelDataSet.ms_gameObjHandleFlag);
+
             net_client.SendCmd(cmd);
         }
 
         #endregion
 
-        //set isStatic doesn't work in runtime
-
-        #region SetGameObjectStatic
-        
         bool bStatic = select_obj.bStatic;
         select_obj.bStatic = GUILayout.Toggle(select_obj.bStatic, "Static");
-
+        #region SetGameObjectStatic
         if (bStatic != select_obj.bStatic) {
+            BatchOption eBatchOption = DisplayeBatchOptionDialog("Static flags");
 
-            confirmationWindow.GameObjHandle("Static flags");
+            if (eBatchOption != BatchOption.eCancle) {
+                string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
 
-            string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
-
-            Cmd cmd = new Cmd(szObj.Length);
-            cmd.WriteNetCmd(NetCmd.C2S_CmdSetObjStatic);
-            cmd.WriteString(szObj);
-            cmd.WriteInt32(ShowPanelDataSet.ms_gameObjHandleFlag);
-            net_client.SendCmd(cmd);
+                Cmd cmd = new Cmd(szObj.Length);
+                cmd.WriteNetCmd(NetCmd.C2S_CmdSetObjStatic);
+                cmd.WriteString(szObj);
+                cmd.WriteInt32((int)eBatchOption);
+                net_client.SendCmd(cmd);
+            }
+            else {
+                select_obj.bStatic = !select_obj.bStatic;
+            }
         }
-        
         #endregion
 
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
 
-        #region SetGameObjectTag
-
-        string bTag = select_obj.bTag;
+        string szTag = select_obj.szTag;
         GUILayout.Label("Tag");
-        select_obj.bTag = EditorGUILayout.TagField(select_obj.bTag);
+        select_obj.szTag = EditorGUILayout.TagField(select_obj.szTag);
+        #region SetGameObjectTag
+        if (!szTag.Equals(select_obj.szTag)) {
+            BatchOption eBatchOption = DisplayeBatchOptionDialog("Tag");
 
-        if (!bTag.Equals(select_obj.bTag)) {
+            if (eBatchOption != BatchOption.eCancle) {
+                string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
 
-            confirmationWindow.GameObjHandle("Tag");
-
-            string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
-
-            Cmd cmd = new Cmd(szObj.Length);
-            cmd.WriteNetCmd(NetCmd.C2S_CmdSetObjTag);
-            cmd.WriteString(szObj);
-            cmd.WriteInt32(ShowPanelDataSet.ms_gameObjHandleFlag);
-            net_client.SendCmd(cmd);
+                Cmd cmd = new Cmd(szObj.Length);
+                cmd.WriteNetCmd(NetCmd.C2S_CmdSetObjTag);
+                cmd.WriteString(szObj);
+                cmd.WriteInt32((int)eBatchOption);
+                net_client.SendCmd(cmd);
+            }
+            else {
+                select_obj.szTag = szTag;
+            }
+            
         }
-
         #endregion
 
-        #region SetGameObjectLayer
-
-        int bLayer = select_obj.bLayer;
+        int nLayer = select_obj.nLayer;
         GUILayout.Label("Layer");
-        select_obj.bLayer = EditorGUILayout.LayerField(select_obj.bLayer);
+        select_obj.nLayer = EditorGUILayout.LayerField(select_obj.nLayer);
+        #region SetGameObjectLayer
+        if (!nLayer.Equals(select_obj.nLayer)) {
+            BatchOption eBatchOption = DisplayeBatchOptionDialog("Layer");
 
-        if (!bLayer.Equals(select_obj.bLayer)) {
+            if (eBatchOption != BatchOption.eCancle) {
+                string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
 
-            confirmationWindow.GameObjHandle("Layer");
-
-            string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
-
-            Cmd cmd = new Cmd(szObj.Length);
-            cmd.WriteNetCmd(NetCmd.C2S_CmdSetObjLayer);
-            cmd.WriteString(szObj);
-            cmd.WriteInt32(ShowPanelDataSet.ms_gameObjHandleFlag);
-            net_client.SendCmd(cmd);
+                Cmd cmd = new Cmd(szObj.Length);
+                cmd.WriteNetCmd(NetCmd.C2S_CmdSetObjLayer);
+                cmd.WriteString(szObj);
+                cmd.WriteInt32((int)eBatchOption);
+                net_client.SendCmd(cmd);
+            }
+            else {
+                select_obj.nLayer = nLayer;
+            }
         }
 
         #endregion
@@ -199,7 +221,17 @@ public class HierarchyPanel : EditorWindow {
         GUILayout.EndHorizontal();
 
         GUILayout.EndVertical();
+    }
 
+    private void ShowComponentPanel() {
+        if (select_obj == null || ShowPanelDataSet.ms_currentSelectComps == null) {
+            return;
+        }
+
+        GUILayout.BeginVertical("Box", GUILayout.Width(300));
+        scroll_view_nodestatus_pos = GUILayout.BeginScrollView(scroll_view_nodestatus_pos);
+
+        ShowGameObjectHeadInfo(select_obj);
 
         for (int i = 0; i < ShowPanelDataSet.ms_currentSelectComps.Length; ++i) {
             RDComponent rdComp = ShowPanelDataSet.ms_currentSelectComps[i];
@@ -332,7 +364,7 @@ public class HierarchyPanel : EditorWindow {
             return;
         }
 
-        if (obj.bActive == false) {
+        if (!obj.bActive) {
             btnStyle = unActiveStyle;
         }
 
@@ -367,9 +399,7 @@ public class HierarchyPanel : EditorWindow {
         if (obj.bExpand && obj.arrChildren.Length > 0) {
             for (int i = 0; i < obj.arrChildren.Length; ++i) {
                 RDGameObject rd = null;
-
                 ShowPanelDataSet.TryGetRDGameObject(obj.arrChildren[i], out rd);
-
                 if (rd != null) {
                     ShowNode(rd, 25 + split, btnStyle);
                 }
@@ -393,7 +423,7 @@ public class HierarchyPanel : EditorWindow {
 
                 if (PropertyWasModified && handlePropertyFlag) {
 
-                    RDProperty[] rdPropertys = ShowPanelDataSet.ms_remoteComponent.GetAllProperty();
+                    RDProperty[] rdPropertys = ShowPanelDataSet.ms_remoteComponent.GetPropertys();
 
                     rdPropertys[0].nComponentID = ShowPanelDataSet.ms_remoteRDComponent.nInstanceID;
                     

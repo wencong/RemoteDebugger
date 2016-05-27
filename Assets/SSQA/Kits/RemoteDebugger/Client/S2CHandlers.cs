@@ -23,9 +23,11 @@ public class S2CHandlers {
         if (net_client != null) {
             net_client.RegisterHandler(NetCmd.S2C_CmdQueryAllObjs, S2C_QueryAllObjs);
             net_client.RegisterHandler(NetCmd.S2C_CmdSetObjActive, S2C_SetObjActive);
-            net_client.RegisterHandler(NetCmd.S2C_CmdSetObjStatic, S2C_SetObjStatic);
-            net_client.RegisterHandler(NetCmd.S2C_CmdSetObjTag, S2C_SetObjTag);
+            
+            //net_client.RegisterHandler(NetCmd.S2C_CmdSetObjStatic, S2C_SetObjStatic);
+            //net_client.RegisterHandler(NetCmd.S2C_CmdSetObjTag, S2C_SetObjTag);
             net_client.RegisterHandler(NetCmd.S2C_CmdSetObjLayer, S2C_SetObjLayer);
+
             net_client.RegisterHandler(NetCmd.S2C_QueryComponent, S2C_QueryComponent);
             net_client.RegisterHandler(NetCmd.S2C_GetComponentProperty, S2CGetComponentProperty);
             net_client.RegisterHandler(NetCmd.S2C_EnableComponent, S2CEnableComponent);
@@ -45,31 +47,19 @@ public class S2CHandlers {
 
     public bool S2C_QueryAllObjs(NetCmd cmd, Cmd c) {
         string rdGameObjs = c.ReadString();
-        //string tags = c.ReadString();
-        //string layers = c.ReadString();
 
         try {
             ShowPanelDataSet.InitDataSet();
-
             RDGameObject[] arrRdObjs = RDDataBase.Deserializer<RDGameObject[]>(rdGameObjs);
-            //List<string> tagList = RDDataBase.Deserializer<List<string>>(tags);
-            //List<int> layerList = RDDataBase.Deserializer<List<int>>(layers);
 
             for (int i = 0; i < arrRdObjs.Length; ++i) {
                 ShowPanelDataSet.AddRdGameObject(arrRdObjs[i]);
             }
 
-            //foreach (string tag in tagList) {
-            //}
-
-            //foreach (int layer in layerList) {
-            //}
-
             if (OnUpdateData != null) {
                 OnUpdateData();
             }
         }
-
         catch (Exception ex) {
             Debug.LogException(ex);
         }
@@ -79,17 +69,15 @@ public class S2CHandlers {
 
     public bool S2C_SetObjActive(NetCmd cmd, Cmd c) {
         string szRecv = c.ReadString();
+        RDGameObject rdGameObj = RDDataBase.Deserializer<RDGameObject>(szRecv);
 
-        List<RDGameObject> rdGameObjs = RDDataBase.Deserializer<List<RDGameObject>>(szRecv);
         RDGameObject cacheRDGameObj = null;
+        ShowPanelDataSet.ms_rdgameobjectDict.TryGetValue(rdGameObj.nInstanceID, out cacheRDGameObj);
 
-        foreach (RDGameObject rdGameObj in rdGameObjs) {
-
-            ShowPanelDataSet.ms_rdgameobjectDict.TryGetValue(rdGameObj.nInstanceID, out cacheRDGameObj);
-            if (cacheRDGameObj != null) {
-                cacheRDGameObj.bActive = rdGameObj.bActive;
-            }
+        if (cacheRDGameObj != null) {
+            cacheRDGameObj.bActive = rdGameObj.bActive;
         }
+        
         if (OnUpdateData != null) {
             OnUpdateData();
         }
@@ -97,6 +85,7 @@ public class S2CHandlers {
         return true;
     }
 
+    /*
     public bool S2C_SetObjStatic(NetCmd cmd, Cmd c) {
         string szRecv = c.ReadString();
 
@@ -126,7 +115,7 @@ public class S2CHandlers {
         foreach (RDGameObject rdGameObj in rdGameObjs) {
             ShowPanelDataSet.ms_rdgameobjectDict.TryGetValue(rdGameObj.nInstanceID, out cacheRDGameObj);
             if (cacheRDGameObj != null) {
-                cacheRDGameObj.bTag = rdGameObj.bTag;
+                cacheRDGameObj.szTag = rdGameObj.szTag;
             }
         }
         if (OnUpdateData != null) {
@@ -135,17 +124,18 @@ public class S2CHandlers {
 
         return true;
     }
+    */
 
     public bool S2C_SetObjLayer(NetCmd cmd, Cmd c) {
         string szRecv = c.ReadString();
 
-        List<RDGameObject> rdGameObjs = RDDataBase.Deserializer<List<RDGameObject>>(szRecv);
+        RDGameObject[] rdGameObjs = RDDataBase.Deserializer<RDGameObject[]>(szRecv);
         RDGameObject cacheRDGameObj = null;
 
         foreach (RDGameObject rdGameObj in rdGameObjs) {
             ShowPanelDataSet.ms_rdgameobjectDict.TryGetValue(rdGameObj.nInstanceID, out cacheRDGameObj);
             if (cacheRDGameObj != null) {
-                cacheRDGameObj.bLayer = rdGameObj.bLayer;
+                cacheRDGameObj.nLayer = rdGameObj.nLayer;
             }
         }
         if (OnUpdateData != null) {
@@ -188,8 +178,11 @@ public class S2CHandlers {
         try {
             string szRecv = c.ReadString();
 
-        
             RDProperty[] rdPropertys = RDDataBase.Deserializer<RDProperty[]>(szRecv);
+
+            for (int i = 0; i < rdPropertys.Length; ++i) {
+                rdPropertys[i].Deserializer();
+            }
 
             ShowPanelDataSet.ms_remoteComponent.SetPropertys(rdPropertys); 
 

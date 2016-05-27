@@ -20,23 +20,24 @@ public static class GameObjectExtension{
         }
     }
 
-    public static void SetAllChildrenProperty<T>(this GameObject gameObj, string pName, T pValue) {
+    public static void SetValueBatch<T>(this GameObject gameObj, string szName, T value) {
+        Transform[] arrTransforms = gameObj.GetComponentsInChildren<Transform>(true);
 
-        List<Transform> cTransforms = gameObj.GetComponentsInChildren<Transform>(true).ToList();
+        for (int i = 0; i < arrTransforms.Length; ++i) {
+            Transform tran = arrTransforms[i];
+            tran.gameObject.SetValue<T>(szName, value);
+        }
+    }
 
-        foreach (Transform cTransform in cTransforms) {
+    public static GameObject[] GetAllChildren(this GameObject gameObject) {
+        Transform[] arrayTrans = gameObject.GetComponentsInChildren<Transform>(true);
 
-            if (pName.Equals("activeSelf") && typeof(T).Equals(typeof(bool))) {
+        GameObject[] retObjs = new GameObject[arrayTrans.Length];
 
-                bool active = pValue.ToString().Equals("True") ? true : false;
-                cTransform.gameObject.SetActive(active);
-
-            }
-            else {
-                cTransform.gameObject.SetValue(pName, pValue);
-            }
-
+        for (int i = 0; i < arrayTrans.Length; ++i) {
+            retObjs[i] = arrayTrans[i].gameObject;
         }
 
+        return retObjs;
     }
 }

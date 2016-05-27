@@ -29,6 +29,7 @@ public static class ComponentExtension {
 		if (component != null && !string.IsNullOrEmpty(propertyName)) {
 			PropertyInfo propertyInfo = component.GetType().GetProperty(propertyName);
             FieldInfo fieldInfo = component.GetType().GetField(propertyName);
+
             if (propertyInfo != null) {
                 propertyInfo.SetValue(component, value, null);
             }
@@ -39,6 +40,8 @@ public static class ComponentExtension {
 	}
 
     public static void SetPropertys(this Component component, RDProperty[] propertys) {
+        string value = string.Empty;
+
         if (component != null && propertys.Length != 0) {
             for (int i = 0; i < propertys.Length;++i) {
                 RDProperty property = propertys[i];
@@ -58,10 +61,13 @@ public static class ComponentExtension {
                         break;
                     }
                     case "System.String": {
-                        if (!property.szName.Equals("name"))
+                        if (!property.szName.Equals("name")) {
+                            value = component.GetValue<string>(property.szName);
+                            
                             if (!component.GetValue<string>(property.szName).Equals(property.value)) {
                                 component.SetValue(property.szName, (string)property.value);
                             }
+                        }
                         break;
                     }
                     case "System.Boolean": {
@@ -192,7 +198,7 @@ public static class ComponentExtension {
                         }
                 }
 
-                if (property.isEnum) {
+                if (property.bIsEnum) {
                     Type EnumType = Type.GetType(property.szTypeName + ",UnityEngine");
                     if (EnumType == null) {
                         EnumType = Type.GetType(property.szTypeName);
@@ -215,7 +221,7 @@ public static class ComponentExtension {
     }
 
 
-    public static RDProperty[] GetAllProperty(this Component component) {
+    public static RDProperty[] GetPropertys(this Component component) {
         List<RDProperty> lstPropertys = new List<RDProperty>();
 
         try {

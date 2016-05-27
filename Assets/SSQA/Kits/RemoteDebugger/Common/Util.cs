@@ -6,6 +6,11 @@ using System.Linq;
 using UnityEngine;
 using LitJsonEx;
 
+public enum BatchOption {
+    eContainChildren,
+    eOnlySelf,
+    eCancle
+}
 
 public class RDDataBase {
     public static string Serializer<T>(T obj) {
@@ -16,7 +21,8 @@ public class RDDataBase {
         System.Object result = null;
 
         result = JsonMapper.ToObject<T>(data);
-
+        /*
+        
         if (typeof(T).Equals(typeof(RDProperty).MakeArrayType())) {
 
             foreach (RDProperty rdProperty in result as RDProperty[])
@@ -28,13 +34,17 @@ public class RDDataBase {
                 }
 
                 ParameterInfo[] pinfos = null;
-                MethodInfo mi = typeof(JsonMapper).GetMethods().First(m => m.Name.Equals("ToObject") && m.IsGenericMethod
+                MethodInfo mi = typeof(JsonMapper).GetMethods().First(
+                    m => m.Name.Equals("ToObject") && m.IsGenericMethod
                     && (pinfos = m.GetParameters()).Length == 1
-                    && pinfos[0].ParameterType.Equals(typeof(string))).MakeGenericMethod(PropertyType);
+                    && pinfos[0].ParameterType.Equals(typeof(string))
+                    ).MakeGenericMethod(PropertyType);
                 rdProperty.value = mi.Invoke(null, new System.Object[] { rdProperty.value });
+
+                
             }
         }
-
+        */
         return (T)result;
     }
 }
@@ -42,10 +52,12 @@ public class RDDataBase {
 public class RDGameObject {
     public int nInstanceID;
     public string szName;
+
     public bool bActive;
     public bool bStatic;
-    public string bTag;
-    public int bLayer;
+
+    public string szTag;
+    public int nLayer;
 
     public int nParentID;
     public int[] arrChildren;
@@ -61,8 +73,8 @@ public class RDGameObject {
         this.szName  = gameobject.name;
         this.bActive = gameobject.activeSelf;
         this.bStatic = gameobject.isStatic;
-        this.bTag = gameobject.tag;
-        this.bLayer = gameobject.layer;
+        this.szTag   = gameobject.tag;
+        this.nLayer  = gameobject.layer;
 
         if (gameobject.transform.parent != null) {
             this.nParentID = gameobject.transform.parent.gameObject.GetInstanceID();
@@ -103,61 +115,105 @@ public class RDComponent {
         }
     }
 
-	public void OnGUI() {
+    public void OnGUI() {
 #if UNITY_EDITOR
-		GUILayout.BeginHorizontal();
+        GUILayout.BeginHorizontal();
 
-		if(!bContainEnable) {
-			GUILayout.Label("", GUILayout.Width(25));
-		}
-		else {
-			GUILayout.Toggle(bEnable, "", GUILayout.Width(25));
-		}
+        if (!bContainEnable) {
+            GUILayout.Label("", GUILayout.Width(25));
+        }
+        else {
+            GUILayout.Toggle(bEnable, "", GUILayout.Width(25));
+        }
 
-		GUILayout.Button(szName);
+        GUILayout.Button(szName);
 
-		GUILayout.EndHorizontal();
+        GUILayout.EndHorizontal();
 #endif
     }
 }
 
 public class RDProperty {
     public int nComponentID = 0;
-
+    
+    public int nMemType;
+    
     public string szTypeName;
 
     public string szName;
 
     public System.Object value;
 
-    public bool isEnum = false;
+    public bool bIsEnum = false;
 
-    public bool isUnityBaseType = false;
+    public bool bIsPrimitive = true;
+
     public RDProperty() { 
 
     }
 
+    public bool Deserializer() {
+        if (this.bIsEnum) {
+            Type EnumType = Type.GetType(szTypeName + ",UnityEngine");
+            if (EnumType == null) {
+                EnumType = Type.GetType(szTypeName);
+            }
+
+            if (EnumType == null) {
+                EnumType = Type.GetType(szTypeName + ",UnityEngine.UI");
+            }
+
+            if (EnumType == null) {
+                return false;
+            }
+
+            this.value = (Enum)Enum.Parse(EnumType, value.ToString());
+        }
+
+        if (!this.bIsPrimitive) {
+            Type PropertyType = Type.GetType(szTypeName + ", UnityEngine");
+            ParameterInfo[] pinfos = null;
+            MethodInfo mi = typeof(JsonMapper).GetMethods().First(
+                    m => m.Name.Equals("ToObject") && m.IsGenericMethod
+                    && (pinfos = m.GetParameters()).Length == 1
+                    && pinfos[0].ParameterType.Equals(typeof(string))
+                    ).MakeGenericMethod(PropertyType);
+            this.value = mi.Invoke(null, new System.Object[] { this.value });
+        }
+
+        return true;
+    }
+
     public RDProperty(Component comp, MemberInfo mi) {
-
         this.nComponentID = comp.GetInstanceID();
-        Type t = null;
+        this.nMemType = (int)mi.MemberType;
 
+        this.szName = mi.Name;
+
+        Type valueType = null;
         if (mi.MemberType.Equals(MemberTypes.Property)) {
-            PropertyInfo pi = (PropertyInfo)mi;
-            t = pi.PropertyType;
-            this.szTypeName = pi.PropertyType.ToString();
-            this.szName = pi.Name;
-            this.value = pi.GetValue(comp, null);
+            this.szTypeName = ((PropertyInfo)mi).PropertyType.ToString();
+            this.value = ((PropertyInfo)mi).GetValue(comp, null);
+            valueType = ((PropertyInfo)mi).PropertyType;
+        }
+        else if (mi.MemberType.Equals(MemberTypes.Field)) {
+            this.szTypeName = ((FieldInfo)mi).FieldType.ToString();
+            this.value = ((FieldInfo)mi).GetValue(comp);
+            valueType = ((FieldInfo)mi).FieldType;
         }
 
-        if (mi.MemberType.Equals(MemberTypes.Field)) {
-            FieldInfo fi = (FieldInfo)mi;
-            t = fi.FieldType;
-            this.szTypeName = fi.FieldType.ToString();
-            this.szName = fi.Name;
-            this.value = fi.GetValue(comp);
+        if (valueType.IsEnum) {
+            this.bIsEnum = true;
+            this.value = this.value.ToString();
         }
 
+        else if (valueType.IsValueType && !valueType.IsPrimitive) {
+            this.bIsPrimitive = false;
+            this.value = JsonMapper.ToJson(this.value);
+        }
+
+        /*
+        //this.isUnityBaseType = true;
         #region GetValue
         if (t.Equals(typeof(Material))) {
             //this.value = (comp as Renderer).sharedMaterial;
@@ -194,42 +250,22 @@ public class RDProperty {
             this.value = this.value.ToString();
             this.isEnum = true;
         }
-
+        
         else if (t.IsValueType && !t.IsPrimitive || t.Equals(typeof(RectOffset))) {
 
             this.isUnityBaseType = true;
             //System.Object value = pi.GetValue(comp, null);
             this.value = JsonMapper.ToJson(this.value);
         }
+        */
 
         /*else {
             this.value = pi.GetValue(comp, null);
         }*/
-        #endregion
+        
     }
 }
 
-/*public class CompProperty {
-    public string compType;
-    public string type;
-    public string name;
-    public System.Object value;
-    public bool isEnum = false;
-    public bool isUnityBaseType = false;
-    public int arraySize = 0;
-    public void UnityBaseTypeDeserialize(string data) {
-        Type PropertyType = Type.GetType(this.type + ", UnityEngine");
-        if (PropertyType == null) {
-            return;
-        }
-        MethodInfo m = typeof(CompProperty).GetMethod("JsonToObject").MakeGenericMethod(PropertyType);
-        this.value = m.Invoke(this, new System.Object[] { data });
-    }
-    public T JsonToObject<T>(string data) {
-        T result = JsonMapper.ToObject<T>(data);
-        return result;
-    }
-}*/
 
 public static class Util {
     public static Type GetType(string szTypeName) {
@@ -437,8 +473,6 @@ public static class ShowPanelDataSet {
     public static GameObject ms_remoteGameObject = null;
     public static Component ms_remoteComponent = null;
     public static RDComponent ms_remoteRDComponent = null;
-
-    public static int ms_gameObjHandleFlag = -1;
 
     //public static List<string> AllFolderPath = new List<string>();
     //public static Dictionary<int, ObjNode> ms_objNodeDict = new Dictionary<int, ObjNode>();
