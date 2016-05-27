@@ -325,6 +325,9 @@ public class C2SHandlers {
 
             RDProperty[] rdPropertys = component.GetPropertys();
 
+            for (int i = 0; i < rdPropertys.Length; ++i) {
+                rdPropertys[i].Serializer();
+            }
             
             string szSend = RDDataBase.Serializer<RDProperty[]>(rdPropertys);
 

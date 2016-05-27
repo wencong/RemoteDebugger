@@ -18,33 +18,9 @@ public class RDDataBase {
     }
 
     public static T Deserializer<T>(string data){
-        System.Object result = null;
 
-        result = JsonMapper.ToObject<T>(data);
-        /*
-        
-        if (typeof(T).Equals(typeof(RDProperty).MakeArrayType())) {
+        System.Object result = JsonMapper.ToObject<T>(data);
 
-            foreach (RDProperty rdProperty in result as RDProperty[])
-                if (rdProperty.isUnityBaseType) {
-                    Type PropertyType = Type.GetType(rdProperty.szTypeName + ", UnityEngine");
-
-                if (PropertyType == null) {
-                    return default(T);
-                }
-
-                ParameterInfo[] pinfos = null;
-                MethodInfo mi = typeof(JsonMapper).GetMethods().First(
-                    m => m.Name.Equals("ToObject") && m.IsGenericMethod
-                    && (pinfos = m.GetParameters()).Length == 1
-                    && pinfos[0].ParameterType.Equals(typeof(string))
-                    ).MakeGenericMethod(PropertyType);
-                rdProperty.value = mi.Invoke(null, new System.Object[] { rdProperty.value });
-
-                
-            }
-        }
-        */
         return (T)result;
     }
 }
@@ -152,32 +128,44 @@ public class RDProperty {
 
     }
 
-    public bool Deserializer() {
-        if (this.bIsEnum) {
-            Type EnumType = Type.GetType(szTypeName + ",UnityEngine");
-            if (EnumType == null) {
-                EnumType = Type.GetType(szTypeName);
-            }
+    public bool Serializer() {
+        Type valueType = Util.GetType(szTypeName);
 
-            if (EnumType == null) {
-                EnumType = Type.GetType(szTypeName + ",UnityEngine.UI");
-            }
-
-            if (EnumType == null) {
-                return false;
-            }
-
-            this.value = (Enum)Enum.Parse(EnumType, value.ToString());
+        if (valueType == null) {
+            return false;
         }
 
-        if (!this.bIsPrimitive) {
-            Type PropertyType = Type.GetType(szTypeName + ", UnityEngine");
+        if (valueType.IsEnum) {
+            this.bIsEnum = true;
+            this.value = this.value.ToString();
+        }
+
+        else if (!valueType.IsPrimitive && !valueType.Equals(typeof(System.String))) {
+            this.bIsPrimitive = false;
+            this.value = JsonMapper.ToJson(this.value);
+        }
+
+        return true;
+    }
+
+    public bool Deserializer() {
+        Type valueType = Util.GetType(szTypeName);
+
+        if (valueType == null) {
+            return false;
+        }
+
+        if (this.bIsEnum) {
+            this.value = (Enum)Enum.Parse(valueType, value.ToString());
+        }
+
+        if (!this.bIsPrimitive && !valueType.Equals(typeof(System.String))) {
             ParameterInfo[] pinfos = null;
             MethodInfo mi = typeof(JsonMapper).GetMethods().First(
                     m => m.Name.Equals("ToObject") && m.IsGenericMethod
                     && (pinfos = m.GetParameters()).Length == 1
                     && pinfos[0].ParameterType.Equals(typeof(string))
-                    ).MakeGenericMethod(PropertyType);
+                    ).MakeGenericMethod(valueType);
             this.value = mi.Invoke(null, new System.Object[] { this.value });
         }
 
@@ -190,26 +178,13 @@ public class RDProperty {
 
         this.szName = mi.Name;
 
-        Type valueType = null;
         if (mi.MemberType.Equals(MemberTypes.Property)) {
             this.szTypeName = ((PropertyInfo)mi).PropertyType.ToString();
             this.value = ((PropertyInfo)mi).GetValue(comp, null);
-            valueType = ((PropertyInfo)mi).PropertyType;
         }
         else if (mi.MemberType.Equals(MemberTypes.Field)) {
             this.szTypeName = ((FieldInfo)mi).FieldType.ToString();
             this.value = ((FieldInfo)mi).GetValue(comp);
-            valueType = ((FieldInfo)mi).FieldType;
-        }
-
-        if (valueType.IsEnum) {
-            this.bIsEnum = true;
-            this.value = this.value.ToString();
-        }
-
-        else if (valueType.IsValueType && !valueType.IsPrimitive) {
-            this.bIsPrimitive = false;
-            this.value = JsonMapper.ToJson(this.value);
         }
 
         /*

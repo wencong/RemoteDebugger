@@ -29,7 +29,7 @@ public class S2CHandlers {
             net_client.RegisterHandler(NetCmd.S2C_CmdSetObjLayer, S2C_SetObjLayer);
 
             net_client.RegisterHandler(NetCmd.S2C_QueryComponent, S2C_QueryComponent);
-            net_client.RegisterHandler(NetCmd.S2C_GetComponentProperty, S2CGetComponentProperty);
+            net_client.RegisterHandler(NetCmd.S2C_GetComponentProperty, S2C_GetComponentProperty);
             net_client.RegisterHandler(NetCmd.S2C_EnableComponent, S2CEnableComponent);
             net_client.RegisterHandler(NetCmd.S2C_CustomComponent, S2CCustomComponent);
             net_client.RegisterHandler(NetCmd.S2C_Log, S2CDebugLog);
@@ -174,7 +174,7 @@ public class S2CHandlers {
         return true;
     }
 
-    public bool S2CGetComponentProperty(NetCmd cmd, Cmd c) {
+    public bool S2C_GetComponentProperty(NetCmd cmd, Cmd c) {
         try {
             string szRecv = c.ReadString();
 

@@ -225,32 +225,27 @@ public static class ComponentExtension {
         List<RDProperty> lstPropertys = new List<RDProperty>();
 
         try {
-            PropertyInfo[] propertyInfos = component.GetType().GetProperties();
-            FieldInfo[] fieldInfos = component.GetType().GetFields();
+            PropertyInfo[] propertyInfos = component.GetType().GetProperties(BindingFlags.Public | 
+                                                                             BindingFlags.Instance | 
+                                                                             BindingFlags.SetProperty | 
+                                                                             BindingFlags.GetProperty);
+
+            FieldInfo[] fieldInfos = component.GetType().GetFields(BindingFlags.Public | 
+                                                                   BindingFlags.Instance | 
+                                                                   BindingFlags.SetField | 
+                                                                   BindingFlags.GetField);
 
             #region AddPropertyInfo
 
             for (int i = 0; i < propertyInfos.Length; ++i) {
                 PropertyInfo pi = propertyInfos[i];
-
                 if (pi.CanWrite && pi.CanRead) {
-
-                    if (pi.PropertyType == typeof(double)) {
-                        if (Double.IsInfinity((double)pi.GetValue(component, null))) {
-                            continue;
-                        }
+                    bool bRet = pi.PropertyType.IsSubclassOf(typeof(UnityEngine.Component));
+                    if (bRet) {
+                        continue;
                     }
 
-                    if (pi.PropertyType == typeof(Single)) {
-                        if (Single.IsInfinity((Single)pi.GetValue(component, null))) {
-                            continue;
-                        }
-                    }
-
-                    if (FilterList.AvailableTypeList.Find(s => s.Equals(pi.PropertyType.ToString())) != null
-                        || pi.PropertyType.IsEnum || pi.PropertyType.IsPrimitive) {
-                        lstPropertys.Add(new RDProperty(component, pi));
-                    }
+                    lstPropertys.Add(new RDProperty(component, pi));
                 }
             }
 

@@ -10,7 +10,7 @@ using LitJsonEx;
 
 
 public class HierarchyPanel : EditorWindow {
-
+    /*
     [MenuItem("SSQA/ParentName")]
     public static void ParentName() {
         if (Selection.activeGameObject.transform.parent != null) {
@@ -31,6 +31,7 @@ public class HierarchyPanel : EditorWindow {
         Transform[] listTransform = Transform.FindObjectsOfType<Transform>();
         Transform[] aa = Selection.activeGameObject.GetComponentsInChildren<Transform>();
     }
+    */
 
     [MenuItem("SSQA/RemoteDebugger")]
     public static void OnShowWindow() {
@@ -120,10 +121,6 @@ public class HierarchyPanel : EditorWindow {
                                         "Yes,change children", "No,this object only", "Cancel");
 
         return (BatchOption)nRet;
-    }
-
-    private void BatchModify<T>(RDGameObject rdObj, string name, T value) {
-
     }
 
     private void ShowGameObjectHeadInfo(RDGameObject select_obj) {
