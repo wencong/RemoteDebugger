@@ -825,6 +825,7 @@ namespace LitJsonEx
             Type obj_type = obj.GetType ();
 
             // See if there's a custom exporter for the System.Object
+
             if (custom_exporters_table.ContainsKey (obj_type)) {
                 ExporterFunc exporter = custom_exporters_table[obj_type];
                 exporter (obj, writer);

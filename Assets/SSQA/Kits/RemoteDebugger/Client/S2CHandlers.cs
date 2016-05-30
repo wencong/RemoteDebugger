@@ -50,7 +50,7 @@ public class S2CHandlers {
 
         try {
             ShowPanelDataSet.InitDataSet();
-            RDGameObject[] arrRdObjs = RDDataBase.Deserializer<RDGameObject[]>(rdGameObjs);
+            RDGameObject[] arrRdObjs = RDDataBase.DeserializerArray<RDGameObject>(rdGameObjs);
 
             for (int i = 0; i < arrRdObjs.Length; ++i) {
                 ShowPanelDataSet.AddRdGameObject(arrRdObjs[i]);
@@ -129,7 +129,7 @@ public class S2CHandlers {
     public bool S2C_SetObjLayer(NetCmd cmd, Cmd c) {
         string szRecv = c.ReadString();
 
-        RDGameObject[] rdGameObjs = RDDataBase.Deserializer<RDGameObject[]>(szRecv);
+        RDGameObject[] rdGameObjs = RDDataBase.DeserializerArray<RDGameObject>(szRecv);
         RDGameObject cacheRDGameObj = null;
 
         foreach (RDGameObject rdGameObj in rdGameObjs) {
@@ -147,7 +147,7 @@ public class S2CHandlers {
     public bool S2C_QueryComponent(NetCmd cmd, Cmd c) {
         string data = c.ReadString();
         try {
-            RDComponent[] rdComps = RDDataBase.Deserializer<RDComponent[]>(data);
+            RDComponent[] rdComps = RDDataBase.DeserializerArray<RDComponent>(data);
 
             MonoBehaviour.DestroyImmediate(ShowPanelDataSet.ms_remoteGameObject);
 
@@ -178,11 +178,7 @@ public class S2CHandlers {
         try {
             string szRecv = c.ReadString();
 
-            RDProperty[] rdPropertys = RDDataBase.Deserializer<RDProperty[]>(szRecv);
-
-            for (int i = 0; i < rdPropertys.Length; ++i) {
-                rdPropertys[i].Deserializer();
-            }
+            RDProperty[] rdPropertys = RDDataBase.DeserializerArray<RDProperty>(szRecv);
 
             ShowPanelDataSet.ms_remoteComponent.SetPropertys(rdPropertys); 
 

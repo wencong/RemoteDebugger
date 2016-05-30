@@ -35,7 +35,7 @@ public class NetServer : IDisposable {
 
     public void LogMsgToClient(string szMsg) {
         try {
-            Cmd usCmd = new Cmd();
+            Cmd usCmd = new Cmd(szMsg.Length);
             usCmd.WriteNetCmd(NetCmd.S2C_Log);
             usCmd.WriteString(szMsg);
             this.SendCommand(usCmd);

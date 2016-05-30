@@ -13,21 +13,105 @@ public enum BatchOption {
 }
 
 public class RDDataBase {
-    public static string Serializer<T>(T obj) {
-        return JsonMapper.ToJson(obj);
+    public static string Serializer<T>(IMetaObj obj) where T : IMetaObj {
+        try {
+            Type valueType = obj.GetValueType();
+
+            if (valueType != null && !valueType.IsPrimitive && !valueType.Equals(typeof(string))){
+                obj.value = JsonMapper.ToJson(obj.value);
+            }
+
+            return JsonMapper.ToJson(obj);
+        }
+        catch(Exception ex) {
+            throw(ex);
+        }
     }
 
-    public static T Deserializer<T>(string data){
+    public static T Deserializer<T>(string data) where T : IMetaObj {
+        try {
+            IMetaObj ret = JsonMapper.ToObject<T>(data);
+            Type valueType = ret.GetValueType();
 
-        System.Object result = JsonMapper.ToObject<T>(data);
+            if (valueType != null && !valueType.IsPrimitive && !valueType.Equals(typeof(string))) {
+                ParameterInfo[] pinfos = null;
+                MethodInfo mi = typeof(JsonMapper).GetMethods().First(
+                        m => m.Name.Equals("ToObject") && m.IsGenericMethod
+                        && (pinfos = m.GetParameters()).Length == 1
+                        && pinfos[0].ParameterType.Equals(typeof(string))
+                        ).MakeGenericMethod(valueType);
+                ret.value = mi.Invoke(null, new System.Object[] { ret.value });
+            }
 
-        return (T)result;
+            return (T)ret;
+        }
+        catch (Exception ex) {
+            throw(ex);
+        }
+    }
+
+
+    public static string SerializerArray<T>(T[] objs) where T : IMetaObj {
+        try {
+            string[] arraySer = new string[objs.Length];
+
+            for (int i = 0; i < objs.Length; ++i) {
+                Type selfType = objs[i].GetSelfType();
+
+                MethodInfo mi = typeof(RDDataBase).GetMethod("Serializer").MakeGenericMethod(selfType);
+
+                arraySer[i] = mi.Invoke(null, new System.Object[] { objs[i] }) as string;
+            }
+
+            return JsonMapper.ToJson(arraySer);
+        }
+        catch (Exception ex) {
+            throw (ex);
+        }
+    }
+
+    public static T[] DeserializerArray<T>(string json) where T : IMetaObj {
+        try {
+            string[] arraySer = JsonMapper.ToObject<string[]>(json);
+
+            T[] ret = new T[arraySer.Length];
+
+            for (int i = 0; i < arraySer.Length; ++i) {
+                ret[i] = Deserializer<T>(arraySer[i]);
+            }
+
+            return ret;
+        }
+        catch (Exception ex) {
+            throw (ex);
+        }
     }
 }
 
-public class RDGameObject {
+
+public abstract class IMetaObj {
+    public string szSelfTypeName;
+
+    public string szValueTypeName;
+    public System.Object value;
+
+    public IMetaObj(string type1, string type2, System.Object value) {
+        this.szSelfTypeName = type1;
+        this.szValueTypeName = type2;
+        this.value = value;
+    }
+
+    public virtual Type GetSelfType() {
+        return Util.GetTypeByName(szSelfTypeName);
+    }
+
+    public virtual Type GetValueType() {
+        return Util.GetTypeByName(szValueTypeName);
+    }
+}
+
+public class RDGameObject : IMetaObj{
     public int nInstanceID;
-    public string szName;
 
     public bool bActive;
     public bool bStatic;
@@ -40,13 +124,12 @@ public class RDGameObject {
 
     public bool bExpand;
 
-    public RDGameObject() {
+    public RDGameObject() : base("", "", "") {
 
     }
 
-    public RDGameObject(GameObject gameobject) {
+    public RDGameObject(GameObject gameobject) : base("RDGameObject", "System.String", gameobject.name) {
         this.nInstanceID = gameobject.GetInstanceID();
-        this.szName  = gameobject.name;
         this.bActive = gameobject.activeSelf;
         this.bStatic = gameobject.isStatic;
         this.szTag   = gameobject.tag;
@@ -67,18 +150,20 @@ public class RDGameObject {
     }
 }
 
-public class RDComponent {
+public class RDComponent : IMetaObj{
     public int nInstanceID;
     public string szName;
 
     public bool bContainEnable;
     public bool bEnable;
 
-    public RDComponent() {
+    public RDComponent()
+        : base("RDComponent", typeof(string).ToString(), "") {
 
     }
 
-    public RDComponent(Component comp) {
+    public RDComponent(Component comp)
+        : base("RDComponent", typeof(string).ToString(), "") {
         this.nInstanceID = comp.GetInstanceID();
 		this.szName = comp.GetType().ToString();
 
@@ -90,26 +175,9 @@ public class RDComponent {
             bContainEnable = bEnable = false;
         }
     }
-
-    public void OnGUI() {
-#if UNITY_EDITOR
-        GUILayout.BeginHorizontal();
-
-        if (!bContainEnable) {
-            GUILayout.Label("", GUILayout.Width(25));
-        }
-        else {
-            GUILayout.Toggle(bEnable, "", GUILayout.Width(25));
-        }
-
-        GUILayout.Button(szName);
-
-        GUILayout.EndHorizontal();
-#endif
-    }
 }
 
-public class RDProperty {
+public class RDProperty : IMetaObj{
     public int nComponentID = 0;
     
     public int nMemType;
@@ -118,61 +186,17 @@ public class RDProperty {
 
     public string szName;
 
-    public System.Object value;
-
     public bool bIsEnum = false;
 
     public bool bIsPrimitive = true;
 
-    public RDProperty() { 
+    public RDProperty()
+        : base("RDProperty", "", null) { 
 
     }
 
-    public bool Serializer() {
-        Type valueType = Util.GetType(szTypeName);
-
-        if (valueType == null) {
-            return false;
-        }
-
-        if (valueType.IsEnum) {
-            this.bIsEnum = true;
-            this.value = this.value.ToString();
-        }
-
-        else if (!valueType.IsPrimitive && !valueType.Equals(typeof(System.String))) {
-            this.bIsPrimitive = false;
-            this.value = JsonMapper.ToJson(this.value);
-        }
-
-        return true;
-    }
-
-    public bool Deserializer() {
-        Type valueType = Util.GetType(szTypeName);
-
-        if (valueType == null) {
-            return false;
-        }
-
-        if (this.bIsEnum) {
-            this.value = (Enum)Enum.Parse(valueType, value.ToString());
-        }
-
-        if (!this.bIsPrimitive && !valueType.Equals(typeof(System.String))) {
-            ParameterInfo[] pinfos = null;
-            MethodInfo mi = typeof(JsonMapper).GetMethods().First(
-                    m => m.Name.Equals("ToObject") && m.IsGenericMethod
-                    && (pinfos = m.GetParameters()).Length == 1
-                    && pinfos[0].ParameterType.Equals(typeof(string))
-                    ).MakeGenericMethod(valueType);
-            this.value = mi.Invoke(null, new System.Object[] { this.value });
-        }
-
-        return true;
-    }
-
-    public RDProperty(Component comp, MemberInfo mi) {
+    public RDProperty(Component comp, MemberInfo mi)
+        : base("RDProperty", "", null) {
         this.nComponentID = comp.GetInstanceID();
         this.nMemType = (int)mi.MemberType;
 
@@ -243,7 +267,7 @@ public class RDProperty {
 
 
 public static class Util {
-    public static Type GetType(string szTypeName) {
+    public static Type GetTypeByName(string szTypeName) {
         Type T = null;
 
         if (szTypeName.Contains("UnityEngine")) {

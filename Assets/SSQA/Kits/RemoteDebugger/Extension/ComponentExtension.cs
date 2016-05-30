@@ -245,7 +245,7 @@ public static class ComponentExtension {
                         continue;
                     }
 
-                    lstPropertys.Add(new RDProperty(component, pi));
+                    //lstPropertys.Add(new RDProperty(component, pi));
                 }
             }
 
@@ -256,7 +256,7 @@ public static class ComponentExtension {
                 FieldInfo fi = fieldInfos[i];
 
                 if (fi.IsPublic && !fi.IsLiteral) {
-
+                    /*
                     if (fi.FieldType == typeof(double)) {
                         if (Double.IsInfinity((double)fi.GetValue(component))) {
                             continue;
@@ -268,11 +268,12 @@ public static class ComponentExtension {
                             continue;
                         }
                     }
-
+                    
                     if(FilterList.AvailableTypeList.Find(s => s.Equals(fi.FieldType.ToString())) != null
                         || fi.FieldType.IsEnum || fi.FieldType.IsPrimitive) {
                             lstPropertys.Add(new RDProperty(component, fi));
-                    }
+                    }*/
+                    lstPropertys.Add(new RDProperty(component, fi));
                 }
 
             }

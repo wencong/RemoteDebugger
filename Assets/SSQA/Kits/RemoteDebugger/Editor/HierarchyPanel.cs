@@ -10,17 +10,39 @@ using LitJsonEx;
 
 
 public class HierarchyPanel : EditorWindow {
-    /*
-    [MenuItem("SSQA/ParentName")]
-    public static void ParentName() {
-        if (Selection.activeGameObject.transform.parent != null) {
-            Debug.Log(Selection.activeGameObject.transform.parent.name);
+
+    public class TestProperty : IMetaObj{
+
+        public TestProperty() : base("", "", null) { }
+
+        public TestProperty(Matrix4x4 mat)
+            : base("TestProperty", mat.GetType().ToString(), mat) {
+            
         }
-        else {
-            Debug.Log("null");
-        }
+        public int n = 0;
+        public string name = "hello";
     }
 
+    public class TestClass {
+        public int n;
+        public System.Object mat;
+        
+    }
+
+    [MenuItem("SSQA/Serializer")]
+    public static void ParentName() {
+        /*
+        RDGameObject rd = new RDGameObject(Selection.activeGameObject);
+
+        string json = RDDataBase.Serializer(rd);
+
+        RDGameObject rd1 = RDDataBase.Deserializerr<RDGameObject>(json);
+
+        Debug.LogFormat((string)rd1.value);
+        */
+    }
+
+    /*
     [MenuItem("SSQA/FindAllObject")]
     public static void FindAllObject() {
         GameObject[] listGameObject = GameObject.FindObjectsOfType<GameObject>();
@@ -129,7 +151,7 @@ public class HierarchyPanel : EditorWindow {
         GUILayout.BeginHorizontal();
 
         bool bActive = select_obj.bActive;
-        select_obj.bActive = GUILayout.Toggle(select_obj.bActive, select_obj.szName);
+        select_obj.bActive = GUILayout.Toggle(select_obj.bActive, (string)select_obj.value);
         #region SetGameObjectActive
         if (bActive != select_obj.bActive) {
             string szObj = RDDataBase.Serializer<RDGameObject>(select_obj);
@@ -379,7 +401,7 @@ public class HierarchyPanel : EditorWindow {
         }
         string s = select_obj == obj ? " *" : "";
 
-        if (GUILayout.Button(obj.szName + s, btnStyle, GUILayout.Width(150))) {
+        if (GUILayout.Button((string)obj.value + s, btnStyle, GUILayout.Width(150))) {
             select_obj = obj;
             string data = RDDataBase.Serializer<RDGameObject>(obj);
 
@@ -424,7 +446,8 @@ public class HierarchyPanel : EditorWindow {
 
                     rdPropertys[0].nComponentID = ShowPanelDataSet.ms_remoteRDComponent.nInstanceID;
                     
-                    string szSend = RDDataBase.Serializer<RDProperty[]>(rdPropertys);
+                    //string szSend = RDDataBase.Serializer<RDProperty[]>(rdPropertys);
+                    string szSend = RDDataBase.SerializerArray(rdPropertys);
 
                     Cmd Cmd = new Cmd(new byte[szSend.Length + 1000]);
 

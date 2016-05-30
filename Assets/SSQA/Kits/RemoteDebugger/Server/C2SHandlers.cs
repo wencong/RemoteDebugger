@@ -70,7 +70,7 @@ public class C2SHandlers {
         }
 
         try {
-            string rdGameObjList = RDDataBase.Serializer<RDGameObject[]>(rdGameObjects.ToArray());
+            string rdGameObjList = RDDataBase.SerializerArray<RDGameObject>(rdGameObjects.ToArray());
             Cmd usCmd = new Cmd(rdGameObjList.Length);
 
             usCmd.WriteNetCmd(NetCmd.S2C_CmdQueryAllObjs);
@@ -265,7 +265,7 @@ public class C2SHandlers {
                 rdGameObjs[i] = new RDGameObject(arrayGameObjectBeModify[i]);
             }
 
-            string szRdGameObjs = RDDataBase.Serializer<RDGameObject[]>(rdGameObjs);
+            string szRdGameObjs = RDDataBase.SerializerArray(rdGameObjs);
 
             Cmd usCmd = new Cmd(szRdGameObjs.Length);
             usCmd.WriteNetCmd(NetCmd.S2C_CmdSetObjLayer);
@@ -297,9 +297,9 @@ public class C2SHandlers {
                     GameRunTimeDataSet.AddComponent(comps[i]);
                 }
 
-                string szCompsInfo = RDDataBase.Serializer<RDComponent[]>(rdComps);
+                string szCompsInfo = RDDataBase.SerializerArray(rdComps);
 
-                Cmd usCmd = new Cmd();
+                Cmd usCmd = new Cmd(szCompsInfo.Length);
                 usCmd.WriteNetCmd(NetCmd.S2C_QueryComponent);
                 usCmd.WriteString(szCompsInfo);
                 this.net_server.SendCommand(usCmd);
@@ -314,6 +314,7 @@ public class C2SHandlers {
 
     private bool C2S_GetComponentProperty(NetCmd cmd, Cmd c) {
         try {
+            /*
             string szRecv = c.ReadString();
 
             RDComponent rdComp = RDDataBase.Deserializer<RDComponent>(szRecv);
@@ -338,7 +339,7 @@ public class C2SHandlers {
             usCmd.WriteString(szSend);
 
             this.net_server.SendCommand(usCmd);
-
+            */
         }
         catch (Exception ex) {
             net_server.LogMsgToClient(ex.ToString());
@@ -372,7 +373,7 @@ public class C2SHandlers {
         string szRecv = c.ReadString();
 
         try {
-            RDProperty[] rdPropertys = RDDataBase.Deserializer<RDProperty[]>(szRecv);
+            RDProperty[] rdPropertys = RDDataBase.DeserializerArray<RDProperty>(szRecv);
             Component component = null;
 
             if (!GameRunTimeDataSet.TryGetComponent(rdPropertys[0].nComponentID, out component)) {
