@@ -305,7 +305,6 @@ public class HierarchyPanel : EditorWindow {
                 GUILayout.Label(rdComp.szName, CompQueryStyle);
             }
 
-
             GUILayout.EndHorizontal();
 
 		}
@@ -427,52 +426,57 @@ public class HierarchyPanel : EditorWindow {
     }
 
     void ShowAllProperty(SerializedObject obj, SerializedProperty m_Property) {
+        /*
         if (FilterList.m_AvailableTypeList.Find(s => s.Equals(m_Property.type)) != null && m_Property.editable) {
             if (HideProperty.Find(s => s.Equals(m_Property.displayName)) == null){
+        */
+        EditorGUILayout.BeginHorizontal();
+        for (int i = 0; i < m_Property.depth; i++)
+            GUILayout.Space(20);
+        EditorGUILayout.PropertyField(m_Property, true);
 
-                EditorGUILayout.BeginHorizontal();
-                for (int i = 0; i < m_Property.depth; i++)
-                    GUILayout.Space(20);
-                EditorGUILayout.PropertyField(m_Property, true);
+        EditorGUILayout.EndHorizontal();
 
-                EditorGUILayout.EndHorizontal();
-
-                if(obj.ApplyModifiedProperties())
-                    PropertyWasModified = true;
-
-                if (PropertyWasModified && handlePropertyFlag) {
-
-                    RDProperty[] rdPropertys = ShowPanelDataSet.ms_remoteComponent.GetPropertys();
-
-                    rdPropertys[0].nComponentID = ShowPanelDataSet.ms_remoteRDComponent.nInstanceID;
-                    
-                    //string szSend = RDDataBase.Serializer<RDProperty[]>(rdPropertys);
-                    string szSend = RDDataBase.SerializerArray(rdPropertys);
-
-                    Cmd Cmd = new Cmd(new byte[szSend.Length + 1000]);
-
-                    Cmd.WriteNetCmd(NetCmd.C2S_CustomComponent);
-                    Cmd.WriteString(szSend);
-                    net_client.SendCmd(Cmd);
-
-                    string data = RDDataBase.Serializer<RDComponent>(ShowPanelDataSet.ms_remoteRDComponent);
-
-                    Cmd cmd = new Cmd(new byte[data.Length + 200]);
-
-                    cmd.WriteNetCmd(NetCmd.C2S_GetComponentProperty);
-                    cmd.WriteString(data);
-                    net_client.SendCmd(cmd);
-
-                    obj.Update();
-
-                    PropertyWasModified = false;
-                    handlePropertyFlag = false;
-
-                }
-            }
+        if (obj.ApplyModifiedProperties()) {
+            PropertyWasModified = true;
         }
-        if(m_Property.NextVisible(false))
+
+        if (PropertyWasModified && handlePropertyFlag) {
+
+            RDProperty[] rdPropertys = ShowPanelDataSet.ms_remoteComponent.GetPropertys();
+
+            rdPropertys[0].nComponentID = ShowPanelDataSet.ms_remoteRDComponent.nInstanceID;
+                    
+            //string szSend = RDDataBase.Serializer<RDProperty[]>(rdPropertys);
+            string szSend = RDDataBase.SerializerArray(rdPropertys);
+
+            Cmd Cmd = new Cmd(new byte[szSend.Length + 1000]);
+
+            Cmd.WriteNetCmd(NetCmd.C2S_CustomComponent);
+            Cmd.WriteString(szSend);
+            net_client.SendCmd(Cmd);
+
+            string data = RDDataBase.Serializer<RDComponent>(ShowPanelDataSet.ms_remoteRDComponent);
+
+            Cmd cmd = new Cmd(new byte[data.Length + 200]);
+
+            cmd.WriteNetCmd(NetCmd.C2S_GetComponentProperty);
+            cmd.WriteString(data);
+            net_client.SendCmd(cmd);
+
+            obj.Update();
+
+            PropertyWasModified = false;
+            handlePropertyFlag = false;
+
+        }
+            //}
+        //}
+
+        if (m_Property.NextVisible(false)) {
             ShowAllProperty(obj, m_Property);
+        }
+            
     }
 
     void OnDisable() {

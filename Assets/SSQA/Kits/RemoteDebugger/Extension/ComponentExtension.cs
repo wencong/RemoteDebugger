@@ -25,7 +25,7 @@ public static class ComponentExtension {
 		return default(T);
 	}
 
-	public static void SetValue<T>(this Component component, string propertyName, T value) {
+	public static void SetValue<T>(Component component, string propertyName, T value) {
 		if (component != null && !string.IsNullOrEmpty(propertyName)) {
 			PropertyInfo propertyInfo = component.GetType().GetProperty(propertyName);
             FieldInfo fieldInfo = component.GetType().GetField(propertyName);
@@ -46,6 +46,30 @@ public static class ComponentExtension {
             for (int i = 0; i < propertys.Length;++i) {
                 RDProperty property = propertys[i];
 
+                Type t = Util.GetTypeByName(property.szTypeName);
+
+                try {
+                    if (property.bIsEnum) {
+                        Enum EnumProperty = (Enum)Enum.Parse(t, property.value.ToString());
+                        SetValue(component, property.szName, EnumProperty);
+                    }
+                    else {
+                        MethodInfo mi = typeof(ComponentExtension).GetMethod("SetValue").MakeGenericMethod(t);
+
+                        if (t.Equals(typeof(System.Single))) {
+                            mi.Invoke(null, new System.Object[] { component, property.szName, Single.Parse(property.value.ToString()) });
+                        }
+                        else {
+                            mi.Invoke(null, new System.Object[] { component, property.szName, property.value });
+                        }
+                    }
+                    
+                }
+                catch (Exception ex) {
+                    throw (ex);
+                }
+
+                /*
                 #region SetValue
                 switch (property.szTypeName) {
                     case "System.Int32": {
@@ -216,6 +240,7 @@ public static class ComponentExtension {
                     component.SetValue(property.szName, EnumProperty);
                 }
                 #endregion
+                 * */
             }
         }
     }
@@ -236,7 +261,6 @@ public static class ComponentExtension {
                                                                    BindingFlags.GetField);
 
             #region AddPropertyInfo
-
             for (int i = 0; i < propertyInfos.Length; ++i) {
                 PropertyInfo pi = propertyInfos[i];
                 if (pi.CanWrite && pi.CanRead) {
@@ -245,10 +269,9 @@ public static class ComponentExtension {
                         continue;
                     }
 
-                    //lstPropertys.Add(new RDProperty(component, pi));
+                    lstPropertys.Add(new RDProperty(component, pi));
                 }
             }
-
             #endregion
 
             #region AddFieldInfo
@@ -256,23 +279,6 @@ public static class ComponentExtension {
                 FieldInfo fi = fieldInfos[i];
 
                 if (fi.IsPublic && !fi.IsLiteral) {
-                    /*
-                    if (fi.FieldType == typeof(double)) {
-                        if (Double.IsInfinity((double)fi.GetValue(component))) {
-                            continue;
-                        }
-                    }
-
-                    if (fi.FieldType == typeof(Single)) {
-                        if (Single.IsInfinity((Single)fi.GetValue(component))) {
-                            continue;
-                        }
-                    }
-                    
-                    if(FilterList.AvailableTypeList.Find(s => s.Equals(fi.FieldType.ToString())) != null
-                        || fi.FieldType.IsEnum || fi.FieldType.IsPrimitive) {
-                            lstPropertys.Add(new RDProperty(component, fi));
-                    }*/
                     lstPropertys.Add(new RDProperty(component, fi));
                 }
 

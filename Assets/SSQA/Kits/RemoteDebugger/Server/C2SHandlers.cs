@@ -314,7 +314,6 @@ public class C2SHandlers {
 
     private bool C2S_GetComponentProperty(NetCmd cmd, Cmd c) {
         try {
-            /*
             string szRecv = c.ReadString();
 
             RDComponent rdComp = RDDataBase.Deserializer<RDComponent>(szRecv);
@@ -325,12 +324,8 @@ public class C2SHandlers {
             }
 
             RDProperty[] rdPropertys = component.GetPropertys();
-
-            for (int i = 0; i < rdPropertys.Length; ++i) {
-                rdPropertys[i].Serializer();
-            }
             
-            string szSend = RDDataBase.Serializer<RDProperty[]>(rdPropertys);
+            string szSend = RDDataBase.SerializerArray<RDProperty>(rdPropertys);
 
             Cmd usCmd = new Cmd(new byte[szSend.Length + 200]);
 
@@ -339,7 +334,7 @@ public class C2SHandlers {
             usCmd.WriteString(szSend);
 
             this.net_server.SendCommand(usCmd);
-            */
+            
         }
         catch (Exception ex) {
             net_server.LogMsgToClient(ex.ToString());
@@ -360,7 +355,7 @@ public class C2SHandlers {
         GameRunTimeDataSet.ms_componentDict.TryGetValue(rdComp.nInstanceID , out comp);
 
         try {
-            comp.SetValue<bool>("enabled", rdComp.bEnable);
+            //comp.SetValue<bool>("enabled", rdComp.bEnable);
         }
         catch (Exception ex) {
             Debug.LogException(ex);

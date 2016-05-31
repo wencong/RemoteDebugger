@@ -18,9 +18,20 @@ public class RDDataBase {
             Type valueType = obj.GetValueType();
 
             if (valueType != null && !valueType.IsPrimitive && !valueType.Equals(typeof(string))){
-                obj.value = JsonMapper.ToJson(obj.value);
+                try {
+                    if (obj.IsEnum()) {
+                        obj.value = obj.value.ToString();
+                    }
+                    else {
+                        obj.value = JsonMapper.ToJson(obj.value);
+                    }
+                    obj.bIsSerialized = true;
+                }
+                catch (Exception ex) {
+                    obj.bIsSerialized = false;
+                }
+                
             }
-
             return JsonMapper.ToJson(obj);
         }
         catch(Exception ex) {
@@ -34,13 +45,20 @@ public class RDDataBase {
             Type valueType = ret.GetValueType();
 
             if (valueType != null && !valueType.IsPrimitive && !valueType.Equals(typeof(string))) {
-                ParameterInfo[] pinfos = null;
-                MethodInfo mi = typeof(JsonMapper).GetMethods().First(
-                        m => m.Name.Equals("ToObject") && m.IsGenericMethod
-                        && (pinfos = m.GetParameters()).Length == 1
-                        && pinfos[0].ParameterType.Equals(typeof(string))
-                        ).MakeGenericMethod(valueType);
-                ret.value = mi.Invoke(null, new System.Object[] { ret.value });
+                if (ret.bIsSerialized) {
+                    if (ret.IsEnum()) {
+                        ret.value = (string)ret.value;
+                    }
+                    else {
+                        ParameterInfo[] pinfos = null;
+                        MethodInfo mi = typeof(JsonMapper).GetMethods().First(
+                                m => m.Name.Equals("ToObject") && m.IsGenericMethod
+                                && (pinfos = m.GetParameters()).Length == 1
+                                && pinfos[0].ParameterType.Equals(typeof(string))
+                                ).MakeGenericMethod(valueType);
+                        ret.value = mi.Invoke(null, new System.Object[] { ret.value });
+                    }
+                }
             }
 
             return (T)ret;
@@ -49,7 +67,6 @@ public class RDDataBase {
             throw(ex);
         }
     }
-
 
     public static string SerializerArray<T>(T[] objs) where T : IMetaObj {
         try {
@@ -94,11 +111,15 @@ public abstract class IMetaObj {
 
     public string szValueTypeName;
     public System.Object value;
+    public bool bIsEnum;
+
+    public bool bIsSerialized;
 
     public IMetaObj(string type1, string type2, System.Object value) {
         this.szSelfTypeName = type1;
         this.szValueTypeName = type2;
         this.value = value;
+        this.bIsEnum = false;
     }
 
     public virtual Type GetSelfType() {
@@ -107,6 +128,10 @@ public abstract class IMetaObj {
 
     public virtual Type GetValueType() {
         return Util.GetTypeByName(szValueTypeName);
+    }
+
+    public virtual bool IsEnum() {
+        return bIsEnum;
     }
 }
 
@@ -177,7 +202,7 @@ public class RDComponent : IMetaObj{
     }
 }
 
-public class RDProperty : IMetaObj{
+public class RDProperty : IMetaObj {
     public int nComponentID = 0;
     
     public int nMemType;
@@ -186,29 +211,37 @@ public class RDProperty : IMetaObj{
 
     public string szName;
 
-    public bool bIsEnum = false;
-
-    public bool bIsPrimitive = true;
-
     public RDProperty()
-        : base("RDProperty", "", null) { 
+        : base("RDProperty", "", "") { 
 
     }
 
     public RDProperty(Component comp, MemberInfo mi)
-        : base("RDProperty", "", null) {
+        : base("RDProperty", "", "") {
+
         this.nComponentID = comp.GetInstanceID();
         this.nMemType = (int)mi.MemberType;
 
         this.szName = mi.Name;
 
+        Type typ = null;
+
         if (mi.MemberType.Equals(MemberTypes.Property)) {
-            this.szTypeName = ((PropertyInfo)mi).PropertyType.ToString();
+            typ = ((PropertyInfo)mi).PropertyType;
+            this.szTypeName = typ.ToString();
             this.value = ((PropertyInfo)mi).GetValue(comp, null);
         }
         else if (mi.MemberType.Equals(MemberTypes.Field)) {
-            this.szTypeName = ((FieldInfo)mi).FieldType.ToString();
+            typ = ((FieldInfo)mi).FieldType;
+            this.szTypeName = typ.ToString();
             this.value = ((FieldInfo)mi).GetValue(comp);
+        }
+
+        this.szValueTypeName = this.szTypeName;
+        this.value = value;
+
+        if (typ.IsEnum) {
+            bIsEnum = true;
         }
 
         /*
