@@ -31,7 +31,7 @@ public class S2CHandlers {
             net_client.RegisterHandler(NetCmd.S2C_QueryComponent, S2C_QueryComponent);
             net_client.RegisterHandler(NetCmd.S2C_GetComponentProperty, S2C_GetComponentProperty);
             net_client.RegisterHandler(NetCmd.S2C_EnableComponent, S2CEnableComponent);
-            net_client.RegisterHandler(NetCmd.S2C_CustomComponent, S2CCustomComponent);
+            net_client.RegisterHandler(NetCmd.S2C_ModifyComponentProperty, S2C_ModifyComponentProperty);
             net_client.RegisterHandler(NetCmd.S2C_Log, S2CDebugLog);
             net_client.RegisterHandler(NetCmd.S2C_FinishWait, S2CFinishWait);
         }
@@ -199,7 +199,7 @@ public class S2CHandlers {
         return true;
     }
 
-    public bool S2CCustomComponent(NetCmd cmd, Cmd c){
+    public bool S2C_ModifyComponentProperty(NetCmd cmd, Cmd c){
         return true;
     }
     public bool S2CFinishWait(NetCmd cmd, Cmd c) {

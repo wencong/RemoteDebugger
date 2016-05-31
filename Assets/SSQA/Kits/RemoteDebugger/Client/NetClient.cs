@@ -67,7 +67,6 @@ public class NetClient : IDisposable {
                     offset += read_byte_count;
                     data_len -= (ushort)read_byte_count;
                 }
-                
 
                 if (0 == data_len) {
                     CmdExecResult ret = cmd_parser.Execute(new Cmd(by_data));

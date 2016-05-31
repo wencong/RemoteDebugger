@@ -30,8 +30,8 @@ public class C2SHandlers {
 
             net_server.RegisterHandler(NetCmd.C2S_QueryComponent, C2S_QueryComponents);
             net_server.RegisterHandler(NetCmd.C2S_GetComponentProperty, C2S_GetComponentProperty);
-            net_server.RegisterHandler(NetCmd.C2S_EnableComponent, C2SEnableComponent);
-            net_server.RegisterHandler(NetCmd.C2S_CustomComponent, C2SCustomComponent);
+            net_server.RegisterHandler(NetCmd.C2S_EnableComponent, C2S_EnableComponent);
+            net_server.RegisterHandler(NetCmd.C2S_ModifyComponentProperty, C2S_ModifyComponentProperty);
             this.net_server = net_server;
         }
     }
@@ -344,7 +344,7 @@ public class C2SHandlers {
         return true;
     }
 
-    private bool C2SEnableComponent(NetCmd cmd, Cmd c) {
+    private bool C2S_EnableComponent(NetCmd cmd, Cmd c) {
         string szRecv = c.ReadString();
 
         RDComponent rdComp = null;
@@ -356,6 +356,7 @@ public class C2SHandlers {
 
         try {
             //comp.SetValue<bool>("enabled", rdComp.bEnable);
+            ComponentExtension.SetValue<bool>(comp, "enabled", rdComp.bEnable);
         }
         catch (Exception ex) {
             Debug.LogException(ex);
@@ -363,8 +364,7 @@ public class C2SHandlers {
 
         return true;
     }
-    private bool C2SCustomComponent(NetCmd cmd, Cmd c){
-
+    private bool C2S_ModifyComponentProperty(NetCmd cmd, Cmd c) {
         string szRecv = c.ReadString();
 
         try {
@@ -376,6 +376,7 @@ public class C2SHandlers {
             }
 
             component.SetPropertys(rdPropertys);
+            //C2S_GetComponentProperty(NetCmd.C2S_GetComponentProperty, new Cmd());
 
         }
         catch (Exception ex) {

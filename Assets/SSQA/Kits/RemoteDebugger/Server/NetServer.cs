@@ -74,7 +74,6 @@ public class NetServer : IDisposable {
                                 LogMsgToClient("net cmd unknown");
                                 break;
                         }
-                        
                     }
                     else {
                         Debug.Log(string.Format("Read data error - {0} ", data_len));

@@ -40,19 +40,27 @@ public static class ComponentExtension {
 	}
 
     public static void SetPropertys(this Component component, RDProperty[] propertys) {
-        string value = string.Empty;
-
         if (component != null && propertys.Length != 0) {
             for (int i = 0; i < propertys.Length;++i) {
                 RDProperty property = propertys[i];
 
-                Type t = Util.GetTypeByName(property.szTypeName);
+                Type t = Util.GetTypeByName(property.szValueTypeName);
 
                 try {
-                    if (property.bIsEnum) {
-                        Enum EnumProperty = (Enum)Enum.Parse(t, property.value.ToString());
-                        SetValue(component, property.szName, EnumProperty);
+                    if (property.IsEnum()) {
+                        Enum eValue = (Enum)Enum.Parse(t, property.value.ToString());
+                        SetValue(component, property.szName, eValue);
                     }
+
+                    else if (property.IsAsset()) {
+                        if (t.IsArray) {
+                            Debug.LogFormat("Todo: Set Asset value: {0} {1}", property.szValueTypeName, property.value.ToString());
+                        }
+                        else {
+                            Debug.LogFormat("Todo: Set Asset value: {0} {1}", property.szValueTypeName, (string)property.value);
+                        }
+                    }
+
                     else {
                         MethodInfo mi = typeof(ComponentExtension).GetMethod("SetValue").MakeGenericMethod(t);
 
@@ -260,7 +268,6 @@ public static class ComponentExtension {
                                                                    BindingFlags.SetField | 
                                                                    BindingFlags.GetField);
 
-            #region AddPropertyInfo
             for (int i = 0; i < propertyInfos.Length; ++i) {
                 PropertyInfo pi = propertyInfos[i];
                 if (pi.CanWrite && pi.CanRead) {
@@ -272,18 +279,14 @@ public static class ComponentExtension {
                     lstPropertys.Add(new RDProperty(component, pi));
                 }
             }
-            #endregion
 
-            #region AddFieldInfo
             for (int i = 0; i < fieldInfos.Length; ++i) {
                 FieldInfo fi = fieldInfos[i];
 
                 if (fi.IsPublic && !fi.IsLiteral) {
                     lstPropertys.Add(new RDProperty(component, fi));
                 }
-
             }
-            #endregion
 
         }
         catch (Exception ex) {
