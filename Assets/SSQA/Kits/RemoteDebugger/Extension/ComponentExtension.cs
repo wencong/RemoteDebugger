@@ -275,7 +275,7 @@ public static class ComponentExtension {
                     if (bRet) {
                         continue;
                     }
-
+                    
                     lstPropertys.Add(new RDProperty(component, pi));
                 }
             }

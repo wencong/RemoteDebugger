@@ -142,6 +142,14 @@ public class RDProperty : IMetaObj {
             this.szValueTypeName = typ.ToString();
             this.value = ((FieldInfo)mi).GetValue(comp);
         }
+
+        if (typ.Equals(typeof(double)) && double.IsInfinity((double)this.value))  {
+            this.value = 0.0;
+        }
+
+        else if (typ.Equals(typeof(float)) && float.IsInfinity((float)this.value)) {
+            this.value = 0.0f;
+        }
     }
 
     public override bool IsEnum() {
