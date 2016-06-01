@@ -66,12 +66,21 @@ public class HierarchyPanel : EditorWindow {
     private GUIStyle CompQueryStyle = null;
 
     private RDGameObject select_obj = null;
+    private RDComponent select_comp = null;
 
     private Vector2 scroll_view_node_pos = Vector2.zero;
     private Vector2 scroll_view_nodestatus_pos = Vector2.zero;
     private Vector2 scroll_view_nodeComponentstatus_pos = Vector2.zero;
 
     private NetClient net_client = new NetClient();
+
+    [MenuItem("SSQA/GetTypeTest")]
+    public static void GetTypeTest() {
+        Util.GetTypeByName(typeof(Transform).ToString());
+        Util.GetTypeByName("Game");
+        Util.GetTypeByName("TS");
+    }
+
 
     [MenuItem("SSQA/RemoteDebugger")]
     public static void OnShowWindow() {
@@ -278,14 +287,14 @@ public class HierarchyPanel : EditorWindow {
             }
             string mark = "";
             //if (FilterList.HideComponent.Find(compType => compType.Equals(rdComp.szName)) == null) {
-            if (ShowPanelDataSet.ms_remoteRDComponent == rdComp){
+            if (select_comp == rdComp) {
                 mark = "*";
             }
 
             if (GUILayout.Button(rdComp.szName + mark)) {
-                ShowPanelDataSet.ms_remoteRDComponent = rdComp;
+                select_comp = rdComp;
 
-                Type PropertyType = ShowPanelDataSet.GetComponentType(rdComp.szName);
+                Type PropertyType = Util.GetTypeByName(rdComp.szName);
 
                 ShowPanelDataSet.ms_remoteComponent = ShowPanelDataSet.ms_remoteGameObject.GetComponent(PropertyType);
 
@@ -320,7 +329,7 @@ public class HierarchyPanel : EditorWindow {
 
 
     private void ShowPropertyPanel() {
-        if (ShowPanelDataSet.ms_remoteRDComponent == null || ShowPanelDataSet.ms_remoteComponent == null) {
+        if (select_comp == null || ShowPanelDataSet.ms_remoteComponent == null) {
             return;
         }
 
@@ -341,7 +350,7 @@ public class HierarchyPanel : EditorWindow {
                 RDProperty[] rdPropertys = ShowPanelDataSet.ms_remoteComponent.GetPropertys();
 
                 for (int i = 0; i < rdPropertys.Length; ++i) {
-                    rdPropertys[i].nComponentID = ShowPanelDataSet.ms_remoteRDComponent.nInstanceID;
+                    rdPropertys[i].nComponentID = select_comp.nInstanceID;
                 }
                 //rdPropertys[0].nComponentID = ShowPanelDataSet.ms_remoteRDComponent.nInstanceID;
                 //string szSend = RDDataBase.Serializer<RDProperty[]>(rdPropertys);
@@ -353,7 +362,7 @@ public class HierarchyPanel : EditorWindow {
                 Cmd.WriteString(szSend);
                 net_client.SendCmd(Cmd);
 
-                string data = RDDataBase.Serializer<RDComponent>(ShowPanelDataSet.ms_remoteRDComponent);
+                string data = RDDataBase.Serializer<RDComponent>(select_comp);
 
                 Cmd cmd = new Cmd(data.Length);
 
@@ -398,7 +407,6 @@ public class HierarchyPanel : EditorWindow {
         ShowPropertyPanel();
         
         GUILayout.EndHorizontal();
-
     }
 
     void Update() {

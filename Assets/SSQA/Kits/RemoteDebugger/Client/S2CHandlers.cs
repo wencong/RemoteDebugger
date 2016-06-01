@@ -149,15 +149,17 @@ public class S2CHandlers {
         try {
             RDComponent[] rdComps = RDDataBase.DeserializerArray<RDComponent>(data);
 
-            MonoBehaviour.DestroyImmediate(ShowPanelDataSet.ms_remoteGameObject);
+            if (ShowPanelDataSet.ms_remoteGameObject != null) {
+                UnityEngine.Object.DestroyImmediate(ShowPanelDataSet.ms_remoteGameObject);
+            }
 
             ShowPanelDataSet.ms_remoteGameObject = new GameObject("_RemoteDebugger");
             ShowPanelDataSet.ms_remoteGameObject.SetActive(false);
 
             for (int i = 0; i < rdComps.Length; ++i) {
-                ShowPanelDataSet.AddRdComponent(rdComps[i]);
-
-                ShowPanelDataSet.AddRemoteComponent(rdComps[i].szName);
+                if (ShowPanelDataSet.AddRemoteComponent(rdComps[i].szName)) {
+                    ShowPanelDataSet.AddRdComponent(rdComps[i]);
+                }
             }
 
             ShowPanelDataSet.ms_currentSelectComps = rdComps;

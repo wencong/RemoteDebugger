@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Reflection;
 using UnityEngine;
 
 
@@ -11,16 +13,15 @@ public static class ShowPanelDataSet {
         ms_lstRootRDObjs.Clear();
 
         ms_rdComponentDict.Clear();
-
         ms_currentSelectComps = null;
-        ms_remoteRDComponent = null;
 
         if (ms_remoteGameObject == null) {
             ms_remoteGameObject = new GameObject("_RemoteDebugger");
             ms_remoteGameObject.SetActive(false);
         }
+
         if (ms_remoteComponent != null) {
-            GameObject.DestroyImmediate(ms_remoteComponent);
+            UnityEngine.Object.DestroyImmediate(ms_remoteComponent);
         }
     }
 
@@ -48,40 +49,18 @@ public static class ShowPanelDataSet {
         }
     }
 
-    public static void AddRemoteComponent(string szComponentType) {
-        //Type t = Type.GetType(szComponentType + ",UnityEngine");
-
-        Type t = GetComponentType(szComponentType);
+    public static bool AddRemoteComponent(string szComponentType) {
+        Type t = Util.GetTypeByName(szComponentType);
 
         if (t == null || ms_remoteGameObject == null) {
-            return;
+            return false;
         }
 
-        if (ms_remoteGameObject.GetComponent(t) != null) {
-            return;
+        if (ms_remoteGameObject.GetComponent(t) == null) {
+            ms_remoteGameObject.AddComponent(t);
         }
 
-        ms_remoteGameObject.AddComponent(t);
-    }
-
-    public static Type GetComponentType(string TypeName) {
-        Type T = Type.GetType(TypeName + ",UnityEngine");
-
-        if (T == null)
-            T = Type.GetType(TypeName + ",UnityEngine.UI");
-
-        if (T == null)
-            T = Type.GetType(TypeName + ",UnityEngine.Networking");
-
-        if (T == null)
-            T = Type.GetType(TypeName);
-
-        if (T == null)
-            return null;
-
-        else {
-            return T;
-        }
+        return true;
     }
 
     public static Dictionary<int, RDGameObject> ms_rdgameobjectDict = new Dictionary<int, RDGameObject>();
@@ -89,15 +68,9 @@ public static class ShowPanelDataSet {
 
     public static Dictionary<int, RDComponent> ms_rdComponentDict = new Dictionary<int, RDComponent>();
     public static RDComponent[] ms_currentSelectComps = null;
-    public static RDProperty[] ms_currentSelectProperty = null;
-    public static RDGameObject ms_selectRDGameObject = null;
+
     public static GameObject ms_remoteGameObject = null;
     public static Component ms_remoteComponent = null;
-    public static RDComponent ms_remoteRDComponent = null;
-
-    //public static List<string> AllFolderPath = new List<string>();
-    //public static Dictionary<int, ObjNode> ms_objNodeDict = new Dictionary<int, ObjNode>();
-
 
     public static void ClearAllData() {
         if (ms_rdgameobjectDict.Count > 0) {
@@ -114,7 +87,6 @@ public static class ShowPanelDataSet {
         }
     }
 }
-
 
 public static class GameRunTimeDataSet {
     public static void InitDataSet() {
@@ -143,7 +115,6 @@ public static class GameRunTimeDataSet {
     public static bool TryGetComponent(int nInstanceID, out UnityEngine.Component comp) {
         return ms_componentDict.TryGetValue(nInstanceID, out comp);
     }
-
 
     public static Dictionary<int, GameObject> ms_gameObjectDict = new Dictionary<int, GameObject>();
     public static Dictionary<int, Component> ms_componentDict = new Dictionary<int, Component>();

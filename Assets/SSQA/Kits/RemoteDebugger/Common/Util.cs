@@ -14,19 +14,29 @@ public static class Util {
         typeof(Mesh),
         typeof(Shader),
         typeof(Texture),
-        typeof(Rigidbody)
+        typeof(Rigidbody),
+        typeof(Transform)
     };
 
     public static Type GetTypeByName(string szTypeName) {
-        Type T = null;
+        Type retType = null;
 
-        if (szTypeName.Contains("UnityEngine")) {
-            T = Type.GetType(szTypeName + ",UnityEngine");
+        Assembly currentAssemly = Assembly.GetExecutingAssembly();
+        retType = currentAssemly.GetType(szTypeName);
+        if (retType != null) {
+            return retType;
         }
-        else {
-            T = Type.GetType(szTypeName);
+
+        AssemblyName[] assemblyNames = currentAssemly.GetReferencedAssemblies();
+        for (int i = 0; i < assemblyNames.Length; ++i) {
+            Assembly assembly = Assembly.Load(assemblyNames[i]);
+            retType = assembly.GetType(szTypeName);
+            if (retType != null) {
+                return retType;
+            }
         }
-        return T;
+
+        return null;
     }
 
     public static bool IsAsset(string szTypeName) {
