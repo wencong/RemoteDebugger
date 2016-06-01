@@ -6,6 +6,62 @@ using System.Text;
 using System.Reflection;
 using UnityEngine;
 
+public class ExLoad : System.Exception {
+    public ExLoad()
+        : base() {
+    }
+
+    public ExLoad(string msg) 
+        : base (msg) {
+    }
+}
+
+public class RDLoader {
+    public virtual T Load<T>(string szPath) where T : UnityEngine.Object {
+        return Resources.Load<T>(szPath);
+        //throw (new ExLoad("you need rewrite load Function in subclass"));
+    }
+}
+
+public class RD {
+    private static RD m_inst = null;
+    public static RD Instance {
+        get {
+            if (m_inst == null) {
+                m_inst = new RD();
+            }
+            return m_inst;
+        }
+    }
+
+    private RDLoader m_loader = null;
+
+    public void SetAssetLoader(RDLoader loader) {
+        //m_loader = loader;
+        m_loader = new RDLoader();
+    }
+
+    public Material LoadMaterial(string szPath) {
+        Material ret = null;
+
+        try {
+            ret = m_loader.Load<Material>(szPath);
+        }
+        catch (Exception ex) {
+            Debug.LogException(ex);
+        }
+
+        return ret;
+    }
+
+    public UnityEngine.Object LoadShader() {
+        return null;
+    }
+
+    public UnityEngine.Object LoadMesh() {
+        return null;
+    }
+}
 
 public static class ShowPanelDataSet {
     public static void InitDataSet() {

@@ -6,6 +6,10 @@ using System.Linq;
 using UnityEngine;
 using LitJsonEx;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 public class RDDataBase {
     public static string Serializer<T>(T obj) where T : IMetaObj {
         try {
@@ -24,12 +28,14 @@ public class RDDataBase {
                                 string[] arrayAsset = new string[nLength];
                                 for (int i = 0; i < nLength; i++) {
                                     UnityEngine.Object asset = (obj.value as Array).GetValue(i) as UnityEngine.Object;
-                                    arrayAsset[i] = asset.name;
+                                    //arrayAsset[i] = asset.name;
+                                    arrayAsset[i] = GetAssetPathOrName(asset);
                                 }
                                 obj.value = JsonMapper.ToJson(arrayAsset);
                             }
                             else {
-                                obj.value = ((UnityEngine.Object)obj.value).name;
+                                //obj.value = ((UnityEngine.Object)obj.value).name;
+                                obj.value = GetAssetPathOrName((UnityEngine.Object)obj.value);
                             }
                         }
                     }
@@ -126,5 +132,19 @@ public class RDDataBase {
         catch (Exception ex) {
             throw (ex);
         }
+    }
+
+    public static string GetAssetPathOrName(UnityEngine.Object asset) {
+        string szRet = string.Empty;
+
+#if UNITY_EDITOR
+        string szPath = AssetDatabase.GetAssetPath(asset);
+        
+        szRet = szPath;
+#else 
+        szRet = asset.name;
+#endif
+
+        return szRet;
     }
 }

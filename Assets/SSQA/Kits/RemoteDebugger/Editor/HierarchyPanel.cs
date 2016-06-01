@@ -10,7 +10,6 @@ using LitJsonEx;
 
 
 public class HierarchyPanel : EditorWindow {
-
     /*
     public class TestProperty : IMetaObj{
 
@@ -74,13 +73,17 @@ public class HierarchyPanel : EditorWindow {
 
     private NetClient net_client = new NetClient();
 
+    /*
     [MenuItem("SSQA/GetTypeTest")]
     public static void GetTypeTest() {
         Util.GetTypeByName(typeof(Transform).ToString());
         Util.GetTypeByName("Game");
         Util.GetTypeByName("TS");
-    }
 
+        string path = AssetDatabase.GetAssetPath(Selection.activeGameObject);
+        Debug.Log(path);
+    }
+    */
 
     [MenuItem("SSQA/RemoteDebugger")]
     public static void OnShowWindow() {

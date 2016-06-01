@@ -143,6 +143,7 @@ public class RDProperty : IMetaObj {
             this.value = ((FieldInfo)mi).GetValue(comp);
         }
 
+        // deal with Infinity
         if (typ.Equals(typeof(double)) && double.IsInfinity((double)this.value))  {
             this.value = 0.0;
         }

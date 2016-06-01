@@ -13,9 +13,7 @@ public static class Util {
         typeof(Material[]),
         typeof(Mesh),
         typeof(Shader),
-        typeof(Texture),
-        typeof(Rigidbody),
-        typeof(Transform)
+        typeof(Texture)
     };
 
     public static Type GetTypeByName(string szTypeName) {
