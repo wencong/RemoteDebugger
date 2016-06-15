@@ -20,9 +20,9 @@ public class RDDataBase {
                     if (obj.IsEnum()) {
                         obj.value = obj.value.ToString();
                     }
-
                     else if (obj.IsAsset()) {
                         if (obj.value != null) {
+                            
                             if (valueType.IsArray) {
                                 int nLength = (obj.value as Array).Length;
                                 string[] arrayAsset = new string[nLength];
@@ -47,7 +47,7 @@ public class RDDataBase {
                 }
                 catch {
                     //Debug.LogException(ex);
-                    Debug.LogErrorFormat("Serializer {0} failed...", obj.szValueTypeName);
+                    Debug.LogFormat("Serializer {0} failed...", obj.szValueTypeName);
                     obj.bIsSerialized = false;
                 }
 
@@ -139,8 +139,12 @@ public class RDDataBase {
 
 #if UNITY_EDITOR
         string szPath = AssetDatabase.GetAssetPath(asset);
-        
-        szRet = szPath;
+
+        if (!string.IsNullOrEmpty(szPath)) {
+            int nPos = szPath.IndexOf("Resources");
+            szRet = szPath.Substring(nPos + "Resources".Length + 1);
+            szRet = szRet.Substring(0, szRet.LastIndexOf("."));
+        }
 #else 
         szRet = asset.name;
 #endif

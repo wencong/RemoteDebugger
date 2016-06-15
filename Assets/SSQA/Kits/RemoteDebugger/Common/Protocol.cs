@@ -45,6 +45,7 @@ public enum NetCmd
     C2S_EnableComponent,
     C2S_ModifyComponentProperty,
     C2S_Log,
+    C2S_CustomCmd,
 
     S2C_CmdBegin             = 2000,
     S2C_CmdQueryAllObjs,
@@ -57,8 +58,9 @@ public enum NetCmd
     S2C_EnableComponent,
     S2C_ModifyComponentProperty,
     S2C_Log,
-    S2C_FinishWait,
+    S2C_CustomCmd,
 
+    S2C_FinishWait,
     SV_CmdEnd,
 }
 

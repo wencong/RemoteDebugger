@@ -19,7 +19,6 @@ public class ExLoad : System.Exception {
 public class RDLoader {
     public virtual T Load<T>(string szPath) where T : UnityEngine.Object {
         return Resources.Load<T>(szPath);
-        //throw (new ExLoad("you need rewrite load Function in subclass"));
     }
 }
 
@@ -39,6 +38,10 @@ public class RD {
     public void SetAssetLoader(RDLoader loader) {
         //m_loader = loader;
         m_loader = new RDLoader();
+    }
+
+    public T Load<T>(string szPath) where T : UnityEngine.Object {
+        return m_loader.Load<T>(szPath);
     }
 
     public Material LoadMaterial(string szPath) {

@@ -12,6 +12,7 @@ public class HierarchyPanel : EditorWindow {
 
     private string m_szIPAddr = "127.0.0.1";
     private string m_szPort = "4996";
+    private string m_szCustomCmd = string.Empty;
 
     private GUIStyle m_uiStyleActive = null;
     private GUIStyle m_uiStyleInActive = null;
@@ -26,7 +27,23 @@ public class HierarchyPanel : EditorWindow {
 
     private NetClient net_client = new NetClient();
 
+    /*
+    [MenuItem("SSQA/FindAssetPath")]
+    public static void OnFindAssetPath() {
+        GameObject obj = Selection.activeGameObject;
+        Renderer r = obj.GetComponentInChildren<Renderer>();
 
+        Material mat = r.sharedMaterial;
+
+        string s = AssetDatabase.GetAssetPath(mat);
+
+        int n = s.IndexOf("Resources");
+
+        string ss = s.Substring(n + "Resources".Length + 1);
+
+        ss = ss.Substring(0, ss.LastIndexOf("."));
+    }
+    */
     [MenuItem("SSQA/RemoteDebugger")]
     public static void OnShowWindow() {
         GetWindow<HierarchyPanel>().Show();
@@ -46,6 +63,27 @@ public class HierarchyPanel : EditorWindow {
 
     public void Awake() {
         S2CHandlers.Instance.OnUpdateData = OnUpdateUI;
+    }
+
+    private void ShowCustomCmdPanel() {
+        if (!net_client.IsConnected) {
+            return;
+        }
+
+        GUILayout.BeginHorizontal();
+        {
+            GUILayout.Label("Cmd:", GUILayout.Width(40));
+            m_szCustomCmd = GUILayout.TextField(m_szCustomCmd, GUILayout.Width(250));
+            if (GUILayout.Button("Execute", GUILayout.Width(100))) {
+                if (!string.IsNullOrEmpty(m_szCustomCmd)) {
+                    Cmd cmd = new Cmd(m_szCustomCmd.Length);
+                    cmd.WriteNetCmd(NetCmd.C2S_CustomCmd);
+                    cmd.WriteString(m_szCustomCmd);
+                    net_client.SendCmd(cmd);
+                }
+            }
+        }
+        GUILayout.EndHorizontal();
     }
 
     private void ShowConnectPanel() {
@@ -240,18 +278,13 @@ public class HierarchyPanel : EditorWindow {
 
                 net_client.SendCmd(cmd);
             }
-            //}
-                /*
-            else {
-                GUILayout.Label(rdComp.szName, CompQueryStyle);
-            }*/
 
             GUILayout.EndHorizontal();
 
-		}
+        }
         GUILayout.EndScrollView();
         
-		GUILayout.EndVertical();
+        GUILayout.EndVertical();
     }
 
 
@@ -274,8 +307,9 @@ public class HierarchyPanel : EditorWindow {
             EditorGUILayout.PropertyField(property, true);
 
             if (obj.ApplyModifiedProperties()) {
-                RDProperty[] rdPropertys = ShowPanelDataSet.ms_remoteComponent.GetPropertys();
 
+                RDProperty[] rdPropertys = ShowPanelDataSet.ms_remoteComponent.GetPropertys();
+                
                 for (int i = 0; i < rdPropertys.Length; ++i) {
                     rdPropertys[i].nComponentID = select_comp.nInstanceID;
                 }
@@ -288,7 +322,8 @@ public class HierarchyPanel : EditorWindow {
                 Cmd.WriteNetCmd(NetCmd.C2S_ModifyComponentProperty);
                 Cmd.WriteString(szSend);
                 net_client.SendCmd(Cmd);
-
+                
+                /*
                 string data = RDDataBase.Serializer<RDComponent>(select_comp);
 
                 Cmd cmd = new Cmd(data.Length);
@@ -296,7 +331,7 @@ public class HierarchyPanel : EditorWindow {
                 cmd.WriteNetCmd(NetCmd.C2S_GetComponentProperty);
                 cmd.WriteString(data);
                 net_client.SendCmd(cmd);
-
+                */
                 obj.Update();
             }
 
@@ -322,6 +357,8 @@ public class HierarchyPanel : EditorWindow {
         m_uiStyleSelected.alignment = TextAnchor.MiddleLeft;
 
         ShowConnectPanel();
+
+        ShowCustomCmdPanel();
 
         GUILayout.BeginHorizontal();
 
@@ -398,7 +435,7 @@ public class HierarchyPanel : EditorWindow {
             net_client = null;
         }
 
-		ShowPanelDataSet.ClearAllData();
+        ShowPanelDataSet.ClearAllData();
     }
 }
 

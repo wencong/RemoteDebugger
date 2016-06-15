@@ -56,7 +56,32 @@ public static class ComponentExtension {
                             Debug.LogFormat("Todo: Set Asset value: {0} {1}", property.szValueTypeName, property.value.ToString());
                         }
                         else {
-                            Debug.LogFormat("Todo: Set Asset value: {0} {1}", property.szValueTypeName, (string)property.value);
+                            //Debug.LogFormat("Todo: Set Asset value: {0} {1}", property.szValueTypeName, (string)property.value);
+                            //MethodInfo mi = typeof(RD).GetMethod("Load").MakeGenericMethod(t);
+
+                            //System.Object o = mi.Invoke(RD.Instance, new System.Object[] { property.value });
+
+                            if (t == typeof(Material)) {
+                                Material mat = Resources.Load<Material>((string)property.value);
+                                if (mat != null) {
+                                    SetValue<Material>(component, property.szName, mat);
+                                }
+                                else {
+                                    Debug.LogErrorFormat("Load {0} Failed! Start search Resources", property.value);
+
+                                    Material[] mats = Resources.FindObjectsOfTypeAll<Material>();
+                                    for (int j = 0; j < mats.Length; ++j) {
+                                        if (mats[j].name == (string)property.value) {
+                                            SetValue<Material>(component, property.szName, mats[j]);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            else if (t == typeof(Mesh)) {
+                                // todo
+                            }
                         }
                     }
 
@@ -101,7 +126,12 @@ public static class ComponentExtension {
                     if (bRet) {
                         continue;
                     }
-                    
+
+                    // call getter with these names will instantiate new object;
+                    if (pi.Name == "mesh" || pi.Name == "material" || pi.Name == "materials") {
+                        continue;
+                    }
+
                     lstPropertys.Add(new RDProperty(component, pi));
                 }
             }

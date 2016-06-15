@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Reflection;
 
 public static class GameObjectExtension{
-
     public static void SetValue<T>(this GameObject gameObj, string propertyName, T value) {
         if (gameObj != null && !string.IsNullOrEmpty(propertyName)) {
             PropertyInfo propertyInfo = gameObj.GetType().GetProperty(propertyName);

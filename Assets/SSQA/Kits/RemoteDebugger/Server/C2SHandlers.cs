@@ -32,6 +32,10 @@ public class C2SHandlers {
             net_server.RegisterHandler(NetCmd.C2S_GetComponentProperty, C2S_GetComponentProperty);
             net_server.RegisterHandler(NetCmd.C2S_EnableComponent, C2S_EnableComponent);
             net_server.RegisterHandler(NetCmd.C2S_ModifyComponentProperty, C2S_ModifyComponentProperty);
+            net_server.RegisterHandler(NetCmd.C2S_CustomCmd, C2S_CustomCmd);
+
+            CustomCmdExecutor.Instance.Init();
+
             this.net_server = net_server;
         }
     }
@@ -322,11 +326,11 @@ public class C2SHandlers {
             if (!GameRunTimeDataSet.TryGetComponent(rdComp.nInstanceID, out component)) {
                 return false;
             }
-
+            
             RDProperty[] rdPropertys = component.GetPropertys();
             
             string szSend = RDDataBase.SerializerArray<RDProperty>(rdPropertys);
-
+            
             Cmd usCmd = new Cmd(new byte[szSend.Length + 200]);
 
             usCmd.WriteNetCmd(NetCmd.S2C_GetComponentProperty);
@@ -334,7 +338,6 @@ public class C2SHandlers {
             usCmd.WriteString(szSend);
 
             this.net_server.SendCommand(usCmd);
-            
         }
         catch (Exception ex) {
             net_server.LogMsgToClient(ex.ToString());
@@ -376,13 +379,36 @@ public class C2SHandlers {
             }
 
             component.SetPropertys(rdPropertys);
-            //C2S_GetComponentProperty(NetCmd.C2S_GetComponentProperty, new Cmd());
-
         }
         catch (Exception ex) {
             net_server.LogMsgToClient(ex.ToString());
         }
         return true;
+    }
+
+    private bool C2S_CustomCmd(NetCmd cmd, Cmd c) {
+        try {
+            string szRecv = c.ReadString();
+            string[] arrayCmd = szRecv.Split();
+
+            if (arrayCmd.Length == 0) {
+                return false;
+            }
+
+            bool ret = CustomCmdExecutor.Instance.Execute(arrayCmd);
+            if (!ret) {
+                net_server.LogMsgToClient(string.Format("Custom Cmd: {0} execute failed", arrayCmd[0]));
+            }
+            else {
+                net_server.LogMsgToClient(string.Format("Custom Cmd: {0} execute Success", arrayCmd[0]));
+            }
+            return ret;
+        }
+        catch (Exception ex) {
+            net_server.LogMsgToClient(ex.ToString());
+            return true;
+        }
+        
     }
 }
 

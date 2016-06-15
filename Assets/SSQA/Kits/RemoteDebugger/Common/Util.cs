@@ -9,11 +9,15 @@ using LitJsonEx;
 
 public static class Util {
     public static Type[] arrayAssetType = new Type[] {
+        typeof(Transform),
+        typeof(Transform[]),
         typeof(Material),
         typeof(Material[]),
         typeof(Mesh),
         typeof(Shader),
-        typeof(Texture)
+        typeof(Texture),
+        typeof(RuntimeAnimatorController),
+        typeof(UnityEngine.Avatar)
     };
 
     public static Type GetTypeByName(string szTypeName) {
