@@ -3,7 +3,11 @@ using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using UnityEngine;
+
+#if UNITY_5_3_2 
 using UnityEngine.SceneManagement;
+#endif
+
 using LitJsonEx;
 
 public class C2SHandlers {
