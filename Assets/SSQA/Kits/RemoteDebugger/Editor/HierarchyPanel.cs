@@ -8,6 +8,8 @@ using System.Collections;
 using System.Collections.Generic;
 using LitJsonEx;
 
+using MyUInt32 = System.UInt32;
+
 public class HierarchyPanel : EditorWindow {
 
     private string m_szIPAddr = "127.0.0.1";
@@ -27,21 +29,35 @@ public class HierarchyPanel : EditorWindow {
 
     private NetClient net_client = new NetClient();
 
+
+    // Test RDDataBase
     /*
-    [MenuItem("SSQA/FindAssetPath")]
+    public class Test : IMetaObj{
+        public Test(string s1, string s2, System.Object o)
+            : base(s1, s2, o) {
+        }
+
+        public Test()
+            : base("", "", null) {
+        }
+    }
+
+    public class Ac {
+        public System.UInt32 uInt;
+    }
+
+    [MenuItem("SSQA/UInt32ToJson")]
     public static void OnFindAssetPath() {
-        GameObject obj = Selection.activeGameObject;
-        Renderer r = obj.GetComponentInChildren<Renderer>();
+        UInt32 val = 4;
+        Test t = new Test("Test", "System.Int32", val);
 
-        Material mat = r.sharedMaterial;
+        string json = RDDataBase.Serializer<Test>(t);
 
-        string s = AssetDatabase.GetAssetPath(mat);
+        Test tt = RDDataBase.Deserializer<Test>(json);
 
-        int n = s.IndexOf("Resources");
-
-        string ss = s.Substring(n + "Resources".Length + 1);
-
-        ss = ss.Substring(0, ss.LastIndexOf("."));
+        FieldInfo fi = typeof(Ac).GetField("uInt");
+        Ac ac = new Ac();
+        fi.SetValue(ac, tt.value);
     }
     */
     [MenuItem("SSQA/RemoteDebugger")]

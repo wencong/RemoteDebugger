@@ -190,7 +190,7 @@ public class S2CHandlers {
 
         }
         catch (Exception ex) {
-            Debug.Log(ex);
+            Debug.Log(ex.ToString());
             return false;
         }
 

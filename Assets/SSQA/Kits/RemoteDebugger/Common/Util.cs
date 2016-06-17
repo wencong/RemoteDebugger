@@ -44,6 +44,10 @@ public static class Util {
     public static bool IsAsset(string szTypeName) {
         Type t = GetTypeByName(szTypeName);
 
+        return IsAsset(t);
+    }
+
+    public static bool IsAsset(Type t) {
         if (t == null) {
             return false;
         }

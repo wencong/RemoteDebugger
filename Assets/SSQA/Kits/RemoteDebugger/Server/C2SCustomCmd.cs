@@ -74,30 +74,16 @@ public class CustomCmd {
         }
     }
 
-    [CustomCmdHandler("LoadPrefab")]
-    public bool LoadPrefab(string[] args) {
-        GameObject prefab = Resources.Load<GameObject>("Prefab/Cube");
-        if (prefab == null) {
-            return false;
-        }
+    [CustomCmdHandler("JustTest")]
+    public bool JustTest(string[] args) {
+        Debug.LogFormat("Just Test Cmd : {0}", args[0]);
         return true;
     }
 
-    [CustomCmdHandler("LoadMaterial")]
-    public bool LoadMaterial(string[] args) {
-        Material mat = Resources.Load<Material>("Material/Test");
-        if (mat == null) {
-            return false;
-        }
-        return true;
-    }
-
-    [CustomCmdHandler("LoadTexture")]
-    public bool LoadTexture(string[] args) {
-        Texture2D tex = Resources.Load<Texture2D>("Texture/long");
-        if (tex == null) {
-            return false;
-        }
+    [CustomCmdHandler("MainPlayerName")]
+    public bool MainPlayerName(string[] args) {
+        Player player = FamilyMgr.m_myFamily.GetActivePlayer();
+        Debug.LogFormat(player.name);
         return true;
     }
 }

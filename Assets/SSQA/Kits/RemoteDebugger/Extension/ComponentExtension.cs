@@ -42,8 +42,17 @@ public static class ComponentExtension {
         if (component != null && propertys.Length != 0) {
             for (int i = 0; i < propertys.Length;++i) {
                 RDProperty property = propertys[i];
+                
+                // do not modify compnent's name
+                if (property.szName == "name") {
+                    continue;
+                }
 
                 Type t = Util.GetTypeByName(property.szValueTypeName);
+                if (t == null) {
+                    Debug.LogWarningFormat("GetTypeByName({0}) is null", property.szValueTypeName);
+                    continue;
+                }
 
                 try {
                     if (property.IsEnum()) {
@@ -87,18 +96,40 @@ public static class ComponentExtension {
 
                     else {
                         MethodInfo mi = typeof(ComponentExtension).GetMethod("SetValue").MakeGenericMethod(t);
+                        System.Object[] parmas = null;
 
-                        if (t.Equals(typeof(System.Single))) {
-                            mi.Invoke(null, new System.Object[] { component, property.szName, Single.Parse(property.value.ToString()) });
+                        /*
+                        if (t.Equals(typeof(string))) {
+                            parmas = new System.Object[] { component, property.szName, property.value };
                         }
                         else {
-                            mi.Invoke(null, new System.Object[] { component, property.szName, property.value });
+                            MethodInfo par = t.GetMethod("Parse");
+                            System.Object o = par.Invoke(null, new System.Object[] { property.value.ToString() });
+                            parmas = new System.Object[] { component, property.szName, o };
                         }
+                        */
+                        
+                        if (t.Equals(typeof(System.Single))) {
+                            parmas = new System.Object[] { component, property.szName, Single.Parse(property.value.ToString()) };
+                        }
+                        else if (t.Equals(typeof(System.UInt32))) {
+                            parmas = new System.Object[] { component, property.szName, UInt32.Parse(property.value.ToString()) };
+                        }
+                        else if (t.Equals(typeof(System.UInt64))) {
+                            parmas = new System.Object[] { component, property.szName, UInt64.Parse(property.value.ToString()) };
+                        }
+                        else if (t.Equals(typeof(System.UInt16))) {
+                            parmas = new System.Object[] { component, property.szName, UInt16.Parse(property.value.ToString()) };
+                        }
+                        else {
+                            parmas = new System.Object[] { component, property.szName, property.value };
+                        }
+                        mi.Invoke(null, parmas);
                     }
-                    
                 }
-                catch (Exception ex) {
-                    throw (ex);
+                catch {
+                    Debug.LogErrorFormat("Set Component:{0} property:{1} Failed, Type:{2}", component.name, property.szName, t.ToString());
+                    //throw (new Exception(string.Format("Set Component:{0} property:{1} Failed, Type:{2}", component.name, property.szName, t.ToString())));
                 }
             }
         }
@@ -128,7 +159,7 @@ public static class ComponentExtension {
                     }
 
                     // call getter with these names will instantiate new object;
-                    if (pi.Name == "mesh" || pi.Name == "material" || pi.Name == "materials") {
+                    if (Util.IsAsset(pi.PropertyType) && ( pi.Name == "mesh" || pi.Name == "material" || pi.Name == "materials")) {
                         continue;
                     }
 
@@ -148,7 +179,6 @@ public static class ComponentExtension {
                     lstPropertys.Add(new RDProperty(component, fi));
                 }
             }
-
         }
         catch (Exception ex) {
             Debug.Log(ex);

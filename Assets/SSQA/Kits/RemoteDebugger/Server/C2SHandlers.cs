@@ -3,11 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using UnityEngine;
-
-#if UNITY_5_3_2 
 using UnityEngine.SceneManagement;
-#endif
-
 using LitJsonEx;
 
 public class C2SHandlers {
@@ -399,14 +395,7 @@ public class C2SHandlers {
                 return false;
             }
 
-            bool ret = CustomCmdExecutor.Instance.Execute(arrayCmd);
-            if (!ret) {
-                net_server.LogMsgToClient(string.Format("Custom Cmd: {0} execute failed", arrayCmd[0]));
-            }
-            else {
-                net_server.LogMsgToClient(string.Format("Custom Cmd: {0} execute Success", arrayCmd[0]));
-            }
-            return ret;
+            return CustomCmdExecutor.Instance.Execute(arrayCmd);
         }
         catch (Exception ex) {
             net_server.LogMsgToClient(ex.ToString());
