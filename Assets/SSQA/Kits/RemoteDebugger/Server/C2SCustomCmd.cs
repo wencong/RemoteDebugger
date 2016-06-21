@@ -38,6 +38,10 @@ public class CustomCmdExecutor {
         }
     }
 
+    public void UnInit() {
+        m_handlers.Clear();
+    }
+
     public bool Execute(string[] arrayCmd) {
         CustomCmdDelegate _handler = null;
         if (m_handlers.TryGetValue(arrayCmd[0], out _handler)) {
@@ -48,7 +52,7 @@ public class CustomCmdExecutor {
         }
     }
 
-    private Dictionary<string, CustomCmdDelegate> m_handlers = new Dictionary<string, CustomCmdDelegate>();
+    public Dictionary<string, CustomCmdDelegate> m_handlers = new Dictionary<string, CustomCmdDelegate>();
 }
 
 
@@ -62,8 +66,10 @@ public class CustomCmdHandler : Attribute {
 }
 
 public class CustomCmd {
-
     private static CustomCmd _inst = null;
+    private CustomCmd() {
+
+    }
 
     public static CustomCmd Instance {
         get {
@@ -74,6 +80,7 @@ public class CustomCmd {
         }
     }
 
+    /*
     [CustomCmdHandler("JustTest")]
     public bool JustTest(string[] args) {
         Debug.LogFormat("Just Test Cmd : {0}", args[0]);
@@ -84,6 +91,44 @@ public class CustomCmd {
     public bool MainPlayerName(string[] args) {
         Player player = FamilyMgr.m_myFamily.GetActivePlayer();
         Debug.LogFormat(player.name);
+        return true;
+    }
+    */
+
+    [CustomCmdHandler("FrustumCull")]
+    public bool CullAllObjectInFrustum(string[] args) {
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null) {
+            return false;
+        }
+        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(mainCamera);
+
+        Renderer[] rs = UnityEngine.GameObject.FindObjectsOfType<Renderer>();
+
+        for (int i = 0; i < rs.Length; ++i) {
+            Renderer r = rs[i];
+            if (GeometryUtility.TestPlanesAABB(planes, r.bounds)) {
+                r.enabled = false;
+            }
+        }
+        return true;
+    }
+
+    [CustomCmdHandler("EnableStaticBatch")]
+    public bool EnableStaticBatch(string[] args) {
+        //bool bEnable = System.Boolean.Parse(args[1]);
+        //AssetBind.bBatch = bEnable;
+        return true;
+    }
+
+    [CustomCmdHandler("MeshCombine")]
+    public bool MeshesCombine(string[] args) {
+        GameObject model = GameObject.Find("Env");
+        if (model != null) {
+            //MeshCombine.WorkWithLightMap(model.transform);
+            StaticBatchingUtility.Combine(model);
+        }
+        
         return true;
     }
 }

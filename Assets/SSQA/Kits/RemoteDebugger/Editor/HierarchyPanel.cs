@@ -14,7 +14,6 @@ public class HierarchyPanel : EditorWindow {
 
     private string m_szIPAddr = "127.0.0.1";
     private string m_szPort = "4996";
-    private string m_szCustomCmd = string.Empty;
 
     private GUIStyle m_uiStyleActive = null;
     private GUIStyle m_uiStyleInActive = null;
@@ -29,7 +28,8 @@ public class HierarchyPanel : EditorWindow {
 
     private NetClient net_client = new NetClient();
 
-
+    private string[] m_arrayCustomCmds = null;
+    private string m_szParam = string.Empty;
     // Test RDDataBase
     /*
     public class Test : IMetaObj{
@@ -60,6 +60,25 @@ public class HierarchyPanel : EditorWindow {
         fi.SetValue(ac, tt.value);
     }
     */
+
+    /*
+    [MenuItem("SSQA/AnalyzeMaterial")]
+    public static void AnalyzeMaterial() {
+        GameObject selectObj = Selection.activeGameObject;
+        if (selectObj == null) {
+            return;
+        }
+
+        MeshFilter mf = selectObj.GetComponent<MeshFilter>();
+
+        int i = mf.sharedMesh.subMeshCount;
+        List<Vector2> uv = new List<Vector2>();
+
+        mf.sharedMesh.GetUVs(0, uv);
+        mf.sharedMesh.GetUVs(1, uv);
+    }
+    */
+
     [MenuItem("SSQA/RemoteDebugger")]
     public static void OnShowWindow() {
         GetWindow<HierarchyPanel>().Show();
@@ -78,9 +97,13 @@ public class HierarchyPanel : EditorWindow {
     }
 
     public void Awake() {
+        CustomCmdExecutor.Instance.Init();
+        m_arrayCustomCmds = CustomCmdExecutor.Instance.m_handlers.Keys.ToArray<string>();
+
         S2CHandlers.Instance.OnUpdateData = OnUpdateUI;
     }
 
+    private int m_nCmdIndex = 0;
     private void ShowCustomCmdPanel() {
         if (!net_client.IsConnected) {
             return;
@@ -88,13 +111,15 @@ public class HierarchyPanel : EditorWindow {
 
         GUILayout.BeginHorizontal();
         {
-            GUILayout.Label("Cmd:", GUILayout.Width(40));
-            m_szCustomCmd = GUILayout.TextField(m_szCustomCmd, GUILayout.Width(250));
+            //GUILayout.Label("Cmd:", GUILayout.Width(40));
+            m_nCmdIndex = EditorGUILayout.Popup(m_nCmdIndex, m_arrayCustomCmds, GUILayout.Width(145));
+            m_szParam = GUILayout.TextField(m_szParam, GUILayout.Width(145));
             if (GUILayout.Button("Execute", GUILayout.Width(100))) {
-                if (!string.IsNullOrEmpty(m_szCustomCmd)) {
-                    Cmd cmd = new Cmd(m_szCustomCmd.Length);
+                string szCmd = string.Format("{0} {1}", m_arrayCustomCmds[m_nCmdIndex], m_szParam);
+                if (!string.IsNullOrEmpty(szCmd)) {
+                    Cmd cmd = new Cmd(szCmd.Length);
                     cmd.WriteNetCmd(NetCmd.C2S_CustomCmd);
-                    cmd.WriteString(m_szCustomCmd);
+                    cmd.WriteString(szCmd);
                     net_client.SendCmd(cmd);
                 }
             }
@@ -452,6 +477,7 @@ public class HierarchyPanel : EditorWindow {
         }
 
         ShowPanelDataSet.ClearAllData();
+        CustomCmdExecutor.Instance.UnInit();
     }
 }
 

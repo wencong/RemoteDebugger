@@ -59,8 +59,24 @@ public class NetServer : IDisposable {
 
                 if (read_byte_count > 0 && data_len > 0) {
                     byte[] by_data = new byte[data_len];
-                    read_byte_count = tcp_client.GetStream().Read(by_data, 0, data_len);
-                    if (read_byte_count == data_len) {
+                    int offset = 0;
+
+                    while (data_len != 0) {
+                        try {
+                            byte[] byRead = new byte[data_len];
+                            read_byte_count = tcp_client.GetStream().Read(byRead, 0, data_len);
+
+                            byRead.CopyTo(by_data, offset);
+
+                            offset += (ushort)read_byte_count;
+                            data_len -= (ushort)read_byte_count;
+                        }
+                        catch (Exception ex) {
+                            Debug.LogException(ex);
+                        }
+                    }
+
+                    if (0 == data_len) {
                         CmdExecResult ret = cmd_parser.Execute(new Cmd(by_data));
                         switch (ret) {
                             case CmdExecResult.Succ:

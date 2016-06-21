@@ -72,7 +72,7 @@ public class C2SHandlers {
         catch (Exception ex) {
             net_server.LogMsgToClient(ex.ToString());
         }
-
+        
         try {
             string rdGameObjList = RDDataBase.SerializerArray<RDGameObject>(rdGameObjects.ToArray());
             Cmd usCmd = new Cmd(rdGameObjList.Length);

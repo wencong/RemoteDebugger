@@ -51,7 +51,7 @@ public class NetClient : IDisposable {
         if (tcp_client == null) {
             return;
         }
-
+        
         while (tcp_client.Available > 0) {
             byte[] by_len = new byte[4];
 
@@ -63,9 +63,18 @@ public class NetClient : IDisposable {
                 int offset = 0;
 
                 while (data_len != 0) {
-                    read_byte_count = tcp_client.GetStream().Read(by_data, offset, data_len);
-                    offset += read_byte_count;
-                    data_len -= (ushort)read_byte_count;
+                    try {
+                        byte[] byRead = new byte[data_len];
+                        read_byte_count = tcp_client.GetStream().Read(byRead, 0, data_len);
+                        
+                        byRead.CopyTo(by_data, offset);
+
+                        offset += (ushort)read_byte_count;
+                        data_len -= (ushort)read_byte_count;
+                    }
+                    catch (Exception ex) {
+                        Debug.LogException(ex);
+                    }
                 }
 
                 if (0 == data_len) {
