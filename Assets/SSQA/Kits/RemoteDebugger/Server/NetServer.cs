@@ -68,8 +68,8 @@ public class NetServer : IDisposable {
 
                             byRead.CopyTo(by_data, offset);
 
-                            offset += (ushort)read_byte_count;
-                            data_len -= (ushort)read_byte_count;
+                            offset += read_byte_count;
+                            data_len -= read_byte_count;
                         }
                         catch (Exception ex) {
                             Debug.LogException(ex);

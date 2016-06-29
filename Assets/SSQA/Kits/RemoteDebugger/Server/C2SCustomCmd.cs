@@ -116,17 +116,16 @@ public class CustomCmd {
 
     [CustomCmdHandler("EnableStaticBatch")]
     public bool EnableStaticBatch(string[] args) {
-        //bool bEnable = System.Boolean.Parse(args[1]);
-        //AssetBind.bBatch = bEnable;
+        bool bEnable = System.Boolean.Parse(args[1]);
+        AssetBind.bBatch = bEnable;
         return true;
     }
 
     [CustomCmdHandler("MeshCombine")]
     public bool MeshesCombine(string[] args) {
-        GameObject model = GameObject.Find("Env");
+        GameObject model = GameObject.Find("Environment/Models");
         if (model != null) {
-            //MeshCombine.WorkWithLightMap(model.transform);
-            StaticBatchingUtility.Combine(model);
+            MeshCombine.WorkWithLightMap(model.transform);
         }
         
         return true;
