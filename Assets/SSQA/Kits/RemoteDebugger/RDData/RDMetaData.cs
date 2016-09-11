@@ -38,6 +38,10 @@ public abstract class IMetaObj {
     public virtual bool IsAsset() {
         return false;
     }
+
+    public virtual bool OnClick(params System.Object[] args) {
+        return true;
+    }
 }
 
 public class RDGameObject : IMetaObj {
@@ -87,6 +91,7 @@ public class RDGameObject : IMetaObj {
 public class RDComponent : IMetaObj {
     public int nInstanceID;
     public string szName;
+    public bool bExpand;
 
     public bool bContainEnable;
     public bool bEnable;

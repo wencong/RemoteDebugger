@@ -34,6 +34,7 @@ public class S2CHandlers {
             net_client.RegisterHandler(NetCmd.S2C_ModifyComponentProperty, S2C_ModifyComponentProperty);
             net_client.RegisterHandler(NetCmd.S2C_Log, S2CDebugLog);
             net_client.RegisterHandler(NetCmd.S2C_FinishWait, S2CFinishWait);
+            net_client.RegisterHandler(NetCmd.S2C_QueryFrustumObjs, S2C_QueryFrustumObjs);
         }
     }
 
@@ -41,6 +42,27 @@ public class S2CHandlers {
         string szLog = c.ReadString();
 
         Debug.Log(szLog);
+
+        return true;
+    }
+
+    public bool S2C_QueryFrustumObjs(NetCmd cmd, Cmd c) {
+        string rdGameObjs = c.ReadString();
+
+        try {
+            ShowPanelDataSet.InitDataSet();
+            RDGameObject[] arrRdObjs = RDDataBase.DeserializerArray<RDGameObject>(rdGameObjs);
+
+            for (int i = 0; i < arrRdObjs.Length; ++i) {
+                ShowPanelDataSet.AddFrustumRDObject(arrRdObjs[i]);
+            }
+
+            if (OnUpdateData != null) {
+                OnUpdateData();
+            }
+        } catch (Exception ex) {
+            Debug.LogException(ex);
+        }
 
         return true;
     }
@@ -182,7 +204,7 @@ public class S2CHandlers {
 
             RDProperty[] rdPropertys = RDDataBase.DeserializerArray<RDProperty>(szRecv);
 
-            ShowPanelDataSet.ms_remoteComponent.SetPropertys(rdPropertys); 
+            ShowPanelDataSet.ms_remoteComponent.SetPropertys(rdPropertys);
 
             if (OnUpdateData != null) {
                 OnUpdateData();

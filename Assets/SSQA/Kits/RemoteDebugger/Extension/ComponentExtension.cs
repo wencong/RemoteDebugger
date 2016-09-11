@@ -163,6 +163,11 @@ public static class ComponentExtension {
                         continue;
                     }
 
+                    System.Object obj = pi.GetValue(component, null);
+                    if (obj is System.Collections.ICollection) {
+                        continue;
+                    }
+
                     lstPropertys.Add(new RDProperty(component, pi));
                 }
             }
@@ -173,6 +178,11 @@ public static class ComponentExtension {
                 if (fi.IsPublic && !fi.IsLiteral) {
                     bool bRet = fi.FieldType.IsSubclassOf(typeof(UnityEngine.Component));
                     if (bRet) {
+                        continue;
+                    }
+
+                    System.Object obj = fi.GetValue(component);
+                    if (obj is System.Collections.ICollection) {
                         continue;
                     }
 

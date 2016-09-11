@@ -34,7 +34,7 @@ public class C2SHandlers {
             net_server.RegisterHandler(NetCmd.C2S_ModifyComponentProperty, C2S_ModifyComponentProperty);
             net_server.RegisterHandler(NetCmd.C2S_CustomCmd, C2S_CustomCmd);
 
-            CustomCmdExecutor.Instance.Init();
+            CustomCmdExecutor.Instance.Init(net_server);
 
             this.net_server = net_server;
         }

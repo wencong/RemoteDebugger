@@ -2,11 +2,13 @@
 using System;
 using System.Reflection;
 using UnityEngine;
+using RegionCombine;
 
 public delegate bool CustomCmdDelegate(string[] args);
 
 public class CustomCmdExecutor {
     private static CustomCmdExecutor _inst = null;
+    private NetServer net_server = null;
 
     public static CustomCmdExecutor Instance {
         get {
@@ -17,7 +19,12 @@ public class CustomCmdExecutor {
         }
     }
 
-    public void Init() {
+    public NetServer net_conn {
+        get { return net_server; }
+        set { net_server = value; }
+    }
+
+    public void Init(NetServer net_server) {
         foreach (var method in typeof(CustomCmd).GetMethods(BindingFlags.Public | 
                                                             BindingFlags.NonPublic | 
                                                             BindingFlags.Instance)) {
@@ -35,6 +42,10 @@ public class CustomCmdExecutor {
                 }
                 
             }
+        }
+
+        if (net_server != null) {
+            this.net_server = net_server;
         }
     }
 
@@ -114,20 +125,129 @@ public class CustomCmd {
         return true;
     }
 
-    [CustomCmdHandler("EnableStaticBatch")]
+    /*[CustomCmdHandler("EnableStaticBatch")]
     public bool EnableStaticBatch(string[] args) {
         bool bEnable = System.Boolean.Parse(args[1]);
-        AssetBind.bBatch = bEnable;
-        return true;
-    }
 
-    [CustomCmdHandler("MeshCombine")]
+        // by uwa4d
+        // AssetBind.bBatch = bEnable;
+        System.Type assetBindType = LogicAssembly.Instance.GetType("AssetBind");
+        assetBindType.GetField("bBatch", BindingFlags.Static | BindingFlags.Public).SetValue(null, bEnable);
+        return true;
+    }*/
+
+    /*[CustomCmdHandler("MeshCombine")]
     public bool MeshesCombine(string[] args) {
         GameObject model = GameObject.Find("Environment/Models");
         if (model != null) {
-            MeshCombine.WorkWithLightMap(model.transform);
+            // by uwa4d
+            // MeshCombine.WorkWithLightMap(model.transform);
+            System.Object[] parameters = { model.transform };
+            LogicAssembly.Instance.GetType("MeshCombine")
+                .GetMethod("WorkWithLightMap", BindingFlags.Public | BindingFlags.Static).Invoke(null, parameters);
         }
         
+        return true;
+    }*/
+
+    [CustomCmdHandler("FrustumQuery")]
+    public bool FrustumQuery(string[] args) {
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null) {
+            return false;
+        }
+        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(mainCamera);
+
+        Renderer[] rs = UnityEngine.GameObject.FindObjectsOfType<Renderer>();
+
+        HashSet<int> setObjIds = new HashSet<int>();
+        List<RDGameObject> rdGameObjects = new List<RDGameObject>();
+
+        for (int i = 0; i < rs.Length; ++i) {
+            Renderer r = rs[i];
+            if (GeometryUtility.TestPlanesAABB(planes, r.bounds)) {
+                try {
+                    AddRdGameObjs(ref setObjIds, ref rdGameObjects, r.transform);               
+                    }
+                catch (Exception ex) {
+                    CustomCmdExecutor.Instance.net_conn.LogMsgToClient(ex.ToString());
+                }
+            }
+        }
+
+        try {
+            string rdGameObjList = RDDataBase.SerializerArray<RDGameObject>(rdGameObjects.ToArray());
+            Cmd usCmd = new Cmd(rdGameObjList.Length);
+
+            usCmd.WriteNetCmd(NetCmd.S2C_QueryFrustumObjs);
+            usCmd.WriteString(rdGameObjList);
+            CustomCmdExecutor.Instance.net_conn.SendCommand(usCmd);
+        } catch (Exception ex) {
+            CustomCmdExecutor.Instance.net_conn.LogMsgToClient(ex.ToString());
+        }
+        
+        return true;
+    }
+
+    void AddRdGameObjs(ref HashSet<int> setObjIds, ref List<RDGameObject> rdObjs, Transform ts) {
+        int objId = 0;
+        GameObject curObj = ts.gameObject;
+        
+        while (ts.parent != null) {
+            objId = ts.parent.gameObject.GetInstanceID();
+            if (!setObjIds.Contains(objId)) {
+                setObjIds.Add(objId);
+                rdObjs.Add(new RDGameObject(ts.parent.gameObject));
+            }
+
+            ts = ts.parent;
+        }
+
+        objId = curObj.GetInstanceID();
+        if (!setObjIds.Contains(objId)) {
+            setObjIds.Add(objId);
+            rdObjs.Add(new RDGameObject(curObj));
+        }
+    }
+
+    [CustomCmdHandler("RegionCombine")]
+    public bool MeshReginCombine(string[] args) {
+        if (args.Length >= 2) {
+            CombineProcessor.CombineCountLimit = Int32.Parse(args[1]);
+        }
+
+        Transform m_regionRoot = null;
+        Rect m_regionRect = new Rect(0, 0, 256, 256);
+        int m_regionCell = 32;
+
+        JXSJDataDynamicLoadMgr dynamicLoad = GameObject.FindObjectOfType<JXSJDataDynamicLoadMgr>();
+        if (dynamicLoad != null) {
+            m_regionRect = dynamicLoad.mapRect;
+            //cellSize = dynamicMgr._cellSize;
+        }
+
+        m_regionRoot = GameObject.Find("Environment/Models").transform;
+        if (m_regionRoot == null) {
+            return false;
+        }
+
+        CombineRegionMgr.Instance.Init(m_regionRect, m_regionCell, m_regionRoot);
+
+        CombineRegion[] regions = CombineRegionMgr.Instance.regions;
+
+        for (int i = 0; i < regions.Length; ++i) {
+            List<Material> lstMats = regions[i].lstMaterials;
+
+            for (int j = 0; j < lstMats.Count; ++j) {
+                string szMsg = string.Format("Combine Region:{0}, Material:{1}", i, lstMats[j].name);
+                Log.Info(szMsg);
+                //EditorUtility.DisplayCancelableProgressBar("", szMsg, (float)j / lstMats.Count);
+                regions[i].CombineByMatAndLayer(lstMats[j], true);
+            }
+        }
+
+        Resources.UnloadUnusedAssets();
+
         return true;
     }
 }

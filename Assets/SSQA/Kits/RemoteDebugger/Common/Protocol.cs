@@ -59,6 +59,7 @@ public enum NetCmd
     S2C_ModifyComponentProperty,
     S2C_Log,
     S2C_CustomCmd,
+    S2C_QueryFrustumObjs,
 
     S2C_FinishWait,
     SV_CmdEnd,

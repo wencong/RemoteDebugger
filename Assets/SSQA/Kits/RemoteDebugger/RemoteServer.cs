@@ -3,6 +3,8 @@ using System.Collections;
 using System;
 
 public class RemoteServer : MonoBehaviour {
+    public static bool enable = false;
+
 	public int port = 4996;
 	// Use this for initialization
 	void Start () {
