@@ -2,7 +2,6 @@
 using System;
 using System.Reflection;
 using UnityEngine;
-using RegionCombine;
 
 public delegate bool CustomCmdDelegate(string[] args);
 
@@ -212,42 +211,6 @@ public class CustomCmd {
 
     [CustomCmdHandler("RegionCombine")]
     public bool MeshReginCombine(string[] args) {
-        if (args.Length >= 2) {
-            CombineProcessor.CombineCountLimit = Int32.Parse(args[1]);
-        }
-
-        Transform m_regionRoot = null;
-        Rect m_regionRect = new Rect(0, 0, 256, 256);
-        int m_regionCell = 32;
-
-        JXSJDataDynamicLoadMgr dynamicLoad = GameObject.FindObjectOfType<JXSJDataDynamicLoadMgr>();
-        if (dynamicLoad != null) {
-            m_regionRect = dynamicLoad.mapRect;
-            //cellSize = dynamicMgr._cellSize;
-        }
-
-        m_regionRoot = GameObject.Find("Environment/Models").transform;
-        if (m_regionRoot == null) {
-            return false;
-        }
-
-        CombineRegionMgr.Instance.Init(m_regionRect, m_regionCell, m_regionRoot);
-
-        CombineRegion[] regions = CombineRegionMgr.Instance.regions;
-
-        for (int i = 0; i < regions.Length; ++i) {
-            List<Material> lstMats = regions[i].lstMaterials;
-
-            for (int j = 0; j < lstMats.Count; ++j) {
-                string szMsg = string.Format("Combine Region:{0}, Material:{1}", i, lstMats[j].name);
-                Log.Info(szMsg);
-                //EditorUtility.DisplayCancelableProgressBar("", szMsg, (float)j / lstMats.Count);
-                regions[i].CombineByMatAndLayer(lstMats[j], true);
-            }
-        }
-
-        Resources.UnloadUnusedAssets();
-
         return true;
     }
 }

@@ -9,6 +9,7 @@ public enum BatchOption {
     eCancle
 }
 
+/*
 public abstract class IMetaObj {
     public string szSelfTypeName;
     public string szValueTypeName;
@@ -166,3 +167,5 @@ public class RDProperty : IMetaObj {
         return Util.IsAsset(szValueTypeName);
     }
 }
+
+*/

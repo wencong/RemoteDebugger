@@ -43,7 +43,7 @@ public class C2SHandlers {
     private bool C2S_QueryAllObjs(NetCmd cmd, Cmd c) {
         GameRunTimeDataSet.InitDataSet();
 
-        List<GameObject> _RootGameObjects = new List<GameObject>();
+		List<GameObject> _RootGameObjects = new List<GameObject>();
 #if UNITY_5_3_2 
         Scene currentScene = SceneManager.GetActiveScene();
         _RootGameObjects = currentScene.GetRootGameObjects().ToList();
@@ -56,7 +56,7 @@ public class C2SHandlers {
             }
         }
 #endif
-        List<RDGameObject> rdGameObjects = new List<RDGameObject>();
+		List<IObject> lstGameObj = new List<IObject>();
 
         try {
             for (int i = 0; i < _RootGameObjects.Count; i++) {
@@ -64,7 +64,7 @@ public class C2SHandlers {
                 Transform[] trans = _root.GetComponentsInChildren<Transform>(true);
                 for (int j = 0; j < trans.Length; ++j ) {
                     Transform tran = trans[j];
-                    rdGameObjects.Add(new RDGameObject(tran.gameObject));
+					lstGameObj.Add(new GameObj(tran.gameObject));
                     GameRunTimeDataSet.AddGameObject(tran.gameObject);
                 }
             }
@@ -74,19 +74,17 @@ public class C2SHandlers {
         }
         
         try {
-            string rdGameObjList = RDDataBase.SerializerArray<RDGameObject>(rdGameObjects.ToArray());
-            Cmd usCmd = new Cmd(rdGameObjList.Length);
+			string szAllObjs = IObject.SerialierArray(lstGameObj.ToArray());
+			Cmd usCmd = new Cmd(szAllObjs.Length);
 
             usCmd.WriteNetCmd(NetCmd.S2C_CmdQueryAllObjs);
-            usCmd.WriteString(rdGameObjList);
+			usCmd.WriteString(szAllObjs);
             this.net_server.SendCommand(usCmd);
         }
         catch (Exception ex) {
             net_server.LogMsgToClient(ex.ToString());
-
             return false;
         }
-
         return true;
     }
 
@@ -94,14 +92,17 @@ public class C2SHandlers {
         try {
             string szRecv = c.ReadString();
 
-            RDGameObject rdGameObj = RDDataBase.Deserializer<RDGameObject>(szRecv);
+			GameObj obj = new GameObj();
+			obj = obj.DeSerializer(szRecv);
+            //RDGameObject rdGameObj = RDDataBase.Deserializer<RDGameObject>(szRecv);
 
             GameObject gameObject = null;
-            GameRunTimeDataSet.TryGetGameObject(rdGameObj.nInstanceID, out gameObject);
+			GameRunTimeDataSet.TryGetGameObject(obj.m_nInstanceID, out gameObject);
 
-            gameObject.SetActive(rdGameObj.bActive);
+			gameObject.SetActive(obj.m_bActive);
 
-            string szSend = RDDataBase.Serializer<RDGameObject>(new RDGameObject(gameObject));
+            //string szSend = RDDataBase.Serializer<RDGameObject>(new RDGameObject(gameObject));
+			string szSend = (new GameObj(gameObject)).Serializer();
 
             Cmd usCmd = new Cmd(szSend.Length);
             usCmd.WriteNetCmd(NetCmd.S2C_CmdSetObjActive);
@@ -235,10 +236,12 @@ public class C2SHandlers {
             string szRecv = c.ReadString();
             BatchOption eBatchOption = (BatchOption)c.ReadInt32();
 
-            RDGameObject rdGameObj = RDDataBase.Deserializer<RDGameObject>(szRecv);
+			GameObj obj = new GameObj();
+			obj = obj.DeSerializer(szRecv);
+            //RDGameObject rdGameObj = RDDataBase.Deserializer<RDGameObject>(szRecv);
 
             GameObject gameObject = null;
-            GameRunTimeDataSet.TryGetGameObject(rdGameObj.nInstanceID, out gameObject);
+			GameRunTimeDataSet.TryGetGameObject(obj.m_nInstanceID, out gameObject);
 
             GameObject[] arrayGameObjectBeModify = null;
 
@@ -261,19 +264,20 @@ public class C2SHandlers {
         }
 
         try {*/
-            BatchModify<GameObject, int>(arrayGameObjectBeModify, "layer", rdGameObj.nLayer);
+			BatchModify<GameObject, int>(arrayGameObjectBeModify, "layer", obj.m_nLayer);
 
-            RDGameObject[] rdGameObjs = new RDGameObject[arrayGameObjectBeModify.Length];
+			GameObj[] objs = new GameObj[arrayGameObjectBeModify.Length];
 
-            for (int i = 0; i < rdGameObjs.Length; ++i ) {
-                rdGameObjs[i] = new RDGameObject(arrayGameObjectBeModify[i]);
+			for (int i = 0; i < objs.Length; ++i ) {
+				objs[i] = new GameObj(arrayGameObjectBeModify[i]);
             }
 
-            string szRdGameObjs = RDDataBase.SerializerArray(rdGameObjs);
+            //string szRdGameObjs = RDDataBase.SerializerArray(rdGameObjs);
+			string szSend = IObject.SerialierArray(objs.ToArray());
 
-            Cmd usCmd = new Cmd(szRdGameObjs.Length);
+			Cmd usCmd = new Cmd(szSend.Length);
             usCmd.WriteNetCmd(NetCmd.S2C_CmdSetObjLayer);
-            usCmd.WriteString(szRdGameObjs);
+			usCmd.WriteString(szSend);
             this.net_server.SendCommand(usCmd);
         }
         catch (Exception ex) {
