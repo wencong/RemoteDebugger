@@ -17,7 +17,8 @@ public static class Util {
         typeof(Shader),
         typeof(Texture),
         typeof(RuntimeAnimatorController),
-        typeof(UnityEngine.Avatar)
+        typeof(UnityEngine.Avatar),
+        typeof(UnityEngine.Font)
     };
 
     public static Type GetTypeByName(string szTypeName) {

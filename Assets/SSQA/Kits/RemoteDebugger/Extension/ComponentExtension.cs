@@ -125,7 +125,7 @@ public static class ComponentExtension {
 
             for (int i = 0; i < fieldInfos.Length; ++i) {
                 FieldInfo fi = fieldInfos[i];
-                Debug.LogError("Field:" + fi.Name);
+                //Debug.LogError("Field:" + fi.Name);
                 lstPropertys.Add(new PropertyObj(component, fi));
             }
         }

@@ -42,12 +42,12 @@ public abstract class IObject {
         string szRet = null;
 
         if (!obj.SupportSerializer()) {
-            Debug.LogWarningFormat("{0}:{1} not support serializer", obj.GetTypeName(), obj.GetValueName());
+            Debug.LogWarningFormat("[Serializer] {0} : {1}  NotSupport", obj.GetValueName(), obj.GetTypeName());
             goto Exit0;
         }
 
         if (!obj.Serializer()) {
-            Debug.LogErrorFormat("{0}:{1} Serializer Failed", obj.GetTypeName(), obj.GetValueName());
+            Debug.LogWarningFormat("[Serializer] {0} : {1} Failed", obj.GetValueName(), obj.GetTypeName());
             goto Exit0;
         }
 
@@ -85,7 +85,7 @@ public abstract class IObject {
         }
 
         if (!ret.DeSerializer()) {
-            Debug.LogErrorFormat("{0}:{1} DeSerializer Failed", ret.GetTypeName(), ret.GetValueName());
+            Debug.LogWarningFormat("[DeSerializer] {0} : {1} Failed", ret.GetValueName(), ret.GetTypeName());
             ret = null;
         }
 
@@ -298,6 +298,10 @@ public class PropertyObj : IObject {
             return false;
         }
 
+        if (IsDelegate()) {
+            return false;
+        }
+
 		return true;
 	}
 
@@ -360,5 +364,9 @@ public class PropertyObj : IObject {
 
     public bool IsCollectionType() {
         return m_value is System.Collections.ICollection;
+    }
+
+    public bool IsDelegate() {
+        return m_value is Delegate || m_value is System.Action;
     }
 }

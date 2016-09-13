@@ -322,7 +322,7 @@ public class HierarchyPanel : EditorWindow {
     }
 
     private void ShowComponentPanel() {
-        if (select_obj == null || ShowPanelDataSet.ms_currentSelectComps == null) {
+        if (select_obj == null || ShowPanelDataSet.ms_currentSelectComps == null || ShowPanelDataSet.ms_remoteGameObject == null) {
             return;
         }
 
