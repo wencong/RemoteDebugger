@@ -68,13 +68,13 @@ public class RD {
 
 public static class ShowPanelDataSet {
     public static void InitDataSet() {
-        ms_rdgameobjectDict.Clear();
+        ms_GameObjDict.Clear();
         ms_lstRootRDObjs.Clear();
 
         ms_rdFrustumObjDict.Clear();
         ms_lstFrustumRootRDObjs.Clear();
 
-        ms_rdComponentDict.Clear();
+        ms_CompObjDict.Clear();
         ms_currentSelectComps = null;
 
         if (ms_remoteGameObject == null) {
@@ -87,41 +87,41 @@ public static class ShowPanelDataSet {
         }
     }
 
-    public static void AddRdGameObject(RDGameObject rd) {
-        int nInstanceID = rd.nInstanceID;
-        if (!ms_rdgameobjectDict.ContainsKey(nInstanceID)) {
-            ms_rdgameobjectDict.Add(nInstanceID, rd);
+    public static void AddGameObj(GameObj rd) {
+        int nInstanceID = rd.m_nInstanceID;
+        if (!ms_GameObjDict.ContainsKey(nInstanceID)) {
+            ms_GameObjDict.Add(nInstanceID, rd);
         }
-        if (rd.nParentID == -1) {
+        if (rd.m_nParentID == -1) {
             ms_lstRootRDObjs.Add(rd);
         }
     }
 
-    public static void AddFrustumRDObject(RDGameObject rd) {
-        int nInstanceID = rd.nInstanceID;
+    public static void AddFrustumRDObject(GameObj rd) {
+        int nInstanceID = rd.m_nInstanceID;
         if (!ms_rdFrustumObjDict.ContainsKey(nInstanceID)) {
             ms_rdFrustumObjDict.Add(nInstanceID, rd);
         }
-        if (rd.nParentID == -1) {
+        if (rd.m_nParentID == -1) {
             ms_lstFrustumRootRDObjs.Add(rd);
         }
     }
 
-    public static bool TryGetRDGameObject(int nInstanceID, out RDGameObject rd) {
-        return ms_rdgameobjectDict.TryGetValue(nInstanceID, out rd);
+    public static bool TryGetGameObj(int nInstanceID, out GameObj rd) {
+        return ms_GameObjDict.TryGetValue(nInstanceID, out rd);
     }
 
-    public static bool TryGetFrustumRDGameObject(int nInstanceID, out RDGameObject rd) {
+    public static bool TryGetFrustumGameObj(int nInstanceID, out GameObj rd) {
         return ms_rdFrustumObjDict.TryGetValue(nInstanceID, out rd);
     }
 
-    public static void AddRdComponent(RDComponent rdComp) {
-        int nInstanceID = rdComp.nInstanceID;
-        if (ms_rdComponentDict.ContainsKey(nInstanceID)) {
-            ms_rdComponentDict[nInstanceID] = rdComp;
+    public static void AddCompObj(CompObj rdComp) {
+        int nInstanceID = rdComp.m_nInstanceID;
+        if (ms_CompObjDict.ContainsKey(nInstanceID)) {
+            ms_CompObjDict[nInstanceID] = rdComp;
         }
         else {
-            ms_rdComponentDict.Add(nInstanceID, rdComp);
+            ms_CompObjDict.Add(nInstanceID, rdComp);
         }
     }
 
@@ -141,18 +141,18 @@ public static class ShowPanelDataSet {
 
 
     private static bool bFind = false;
-    private static RDGameObject preObj = null;
+    private static GameObj preObj = null;
 
-    public static RDGameObject GetPreRdGameObject(RDGameObject rdGameObject) {
-        if (rdGameObject == null) {
+    public static GameObj GetPreGameObj(GameObj GameObj) {
+        if (GameObj == null) {
             return null;
         }
 
-        RDGameObject rdRet = null;
+        GameObj rdRet = null;
         preObj = null;
 
         for (int i = 0; i < ms_lstRootRDObjs.Count; ++i) {
-            rdRet = _GetPreRdGameObject(ms_lstRootRDObjs[i], rdGameObject);
+            rdRet = _GetPreGameObj(ms_lstRootRDObjs[i], GameObj);
             if (rdRet != null) {
                 break;
             }
@@ -162,21 +162,21 @@ public static class ShowPanelDataSet {
         return rdRet;
     }
 
-    private static RDGameObject _GetPreRdGameObject(RDGameObject root, RDGameObject rdGameObject) {
-        RDGameObject ret = null;
+    private static GameObj _GetPreGameObj(GameObj root, GameObj GameObj) {
+        GameObj ret = null;
 
-        if (root == rdGameObject) {
+        if (root == GameObj) {
             return preObj;
         }
         else {
             preObj = root;
         }
 
-        if (root.bExpand == true) {
-            for (int i = 0; i < root.arrChildren.Length; ++i) {
-                RDGameObject rd = null;
-                if (TryGetRDGameObject(root.arrChildren[i], out rd)) {
-                    ret = _GetPreRdGameObject(rd, rdGameObject);
+        if (root.m_bExpand == true) {
+            for (int i = 0; i < root.m_childrenID.Length; ++i) {
+                GameObj rd = null;
+                if (TryGetGameObj(root.m_childrenID[i], out rd)) {
+                    ret = _GetPreGameObj(rd, GameObj);
                     if (ret != null) {
                         break;
                     }
@@ -187,16 +187,16 @@ public static class ShowPanelDataSet {
         return ret;
     }
 
-    public static RDGameObject GetNextRdGameObject(RDGameObject rdGameObject) {
-        if (rdGameObject == null) {
+    public static GameObj GetNextGameObj(GameObj GameObj) {
+        if (GameObj == null) {
             return null;
         }
 
-        RDGameObject rdRet = null;
+        GameObj rdRet = null;
         bFind = false;
 
         for (int i = 0; i < ms_lstRootRDObjs.Count; ++i) {
-            rdRet = _GetNextRDGameObject(ms_lstRootRDObjs[i], rdGameObject);
+            rdRet = _GetNextGameObj(ms_lstRootRDObjs[i], GameObj);
             if (rdRet != null) {
                 break;
             }
@@ -204,21 +204,21 @@ public static class ShowPanelDataSet {
         return rdRet;
     }
 
-    private static RDGameObject _GetNextRDGameObject(RDGameObject root, RDGameObject rdGameObject) {
+    private static GameObj _GetNextGameObj(GameObj root, GameObj GameObj) {
         if (bFind == true) {
             return root;
         }
 
-        if (root == rdGameObject) {
+        if (root == GameObj) {
             bFind = true;
         }
 
-        RDGameObject ret = null;
-        if (root.bExpand == true) {
-            for (int i = 0; i < root.arrChildren.Length; ++i) {
-                RDGameObject rd = null;
-                if (TryGetRDGameObject(root.arrChildren[i], out rd)) {
-                    ret = _GetNextRDGameObject(rd, rdGameObject);
+        GameObj ret = null;
+        if (root.m_bExpand == true) {
+            for (int i = 0; i < root.m_childrenID.Length; ++i) {
+                GameObj rd = null;
+                if (TryGetGameObj(root.m_childrenID[i], out rd)) {
+                    ret = _GetNextGameObj(rd, GameObj);
                     if (ret != null) {
                         break;
                     }
@@ -230,27 +230,27 @@ public static class ShowPanelDataSet {
     }
 
 
-    public static Dictionary<int, RDGameObject> ms_rdgameobjectDict = new Dictionary<int, RDGameObject>();
-    public static List<RDGameObject> ms_lstRootRDObjs = new List<RDGameObject>();
+    public static Dictionary<int, GameObj> ms_GameObjDict = new Dictionary<int, GameObj>();
+    public static List<GameObj> ms_lstRootRDObjs = new List<GameObj>();
 
-    public static Dictionary<int, RDComponent> ms_rdComponentDict = new Dictionary<int, RDComponent>();
-    public static RDComponent[] ms_currentSelectComps = null;
+    public static Dictionary<int, CompObj> ms_CompObjDict = new Dictionary<int, CompObj>();
+    public static CompObj[] ms_currentSelectComps = null;
 
-    public static Dictionary<int, RDGameObject> ms_rdFrustumObjDict = new Dictionary<int, RDGameObject>();
-    public static List<RDGameObject> ms_lstFrustumRootRDObjs = new List<RDGameObject>();
+    public static Dictionary<int, GameObj> ms_rdFrustumObjDict = new Dictionary<int, GameObj>();
+    public static List<GameObj> ms_lstFrustumRootRDObjs = new List<GameObj>();
 
     public static GameObject ms_remoteGameObject = null;
     public static Component ms_remoteComponent = null;
 
     public static void ClearAllData() {
-        if (ms_rdgameobjectDict.Count > 0) {
-            ms_rdgameobjectDict.Clear();
+        if (ms_GameObjDict.Count > 0) {
+            ms_GameObjDict.Clear();
         }
         if (ms_lstRootRDObjs.Count > 0) {
             ms_lstRootRDObjs.Clear();
         }
-        if (ms_rdComponentDict.Count > 0) {
-            ms_rdComponentDict.Clear();
+        if (ms_CompObjDict.Count > 0) {
+            ms_CompObjDict.Clear();
         }
         if (ms_rdFrustumObjDict.Count > 0) {
             ms_rdFrustumObjDict.Clear();

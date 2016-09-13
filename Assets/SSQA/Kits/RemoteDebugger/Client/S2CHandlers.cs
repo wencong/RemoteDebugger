@@ -51,7 +51,7 @@ public class S2CHandlers {
 
         try {
             ShowPanelDataSet.InitDataSet();
-            RDGameObject[] arrRdObjs = RDDataBase.DeserializerArray<RDGameObject>(rdGameObjs);
+            GameObj[] arrRdObjs = IObject.DeSerializerArray<GameObj>(rdGameObjs);
 
             for (int i = 0; i < arrRdObjs.Length; ++i) {
                 ShowPanelDataSet.AddFrustumRDObject(arrRdObjs[i]);
@@ -72,10 +72,10 @@ public class S2CHandlers {
 
         try {
             ShowPanelDataSet.InitDataSet();
-            RDGameObject[] arrRdObjs = RDDataBase.DeserializerArray<RDGameObject>(rdGameObjs);
+            GameObj[] arrRdObjs = IObject.DeSerializerArray<GameObj>(rdGameObjs);
 
             for (int i = 0; i < arrRdObjs.Length; ++i) {
-                ShowPanelDataSet.AddRdGameObject(arrRdObjs[i]);
+                ShowPanelDataSet.AddGameObj(arrRdObjs[i]);
             }
 
             if (OnUpdateData != null) {
@@ -91,13 +91,13 @@ public class S2CHandlers {
 
     public bool S2C_SetObjActive(NetCmd cmd, Cmd c) {
         string szRecv = c.ReadString();
-        RDGameObject rdGameObj = RDDataBase.Deserializer<RDGameObject>(szRecv);
+        GameObj rdGameObj = IObject.DeSerializer<GameObj>(szRecv);
 
-        RDGameObject cacheRDGameObj = null;
-        ShowPanelDataSet.ms_rdgameobjectDict.TryGetValue(rdGameObj.nInstanceID, out cacheRDGameObj);
+        GameObj cacheRDGameObj = null;
+        ShowPanelDataSet.ms_GameObjDict.TryGetValue(rdGameObj.m_nInstanceID, out cacheRDGameObj);
 
         if (cacheRDGameObj != null) {
-            cacheRDGameObj.bActive = rdGameObj.bActive;
+            cacheRDGameObj.m_bActive = rdGameObj.m_bActive;
         }
         
         if (OnUpdateData != null) {
@@ -111,12 +111,12 @@ public class S2CHandlers {
     public bool S2C_SetObjStatic(NetCmd cmd, Cmd c) {
         string szRecv = c.ReadString();
 
-        List<RDGameObject> rdGameObjs = RDDataBase.Deserializer<List<RDGameObject>>(szRecv);
-        RDGameObject cacheRDGameObj = null;
+        List<GameObj> rdGameObjs = RDDataBase.Deserializer<List<GameObj>>(szRecv);
+        GameObj cacheRDGameObj = null;
 
-        foreach (RDGameObject rdGameObj in rdGameObjs) {
+        foreach (GameObj rdGameObj in rdGameObjs) {
 
-            ShowPanelDataSet.ms_rdgameobjectDict.TryGetValue(rdGameObj.nInstanceID, out cacheRDGameObj);
+            ShowPanelDataSet.ms_GameObjDict.TryGetValue(rdGameObj.nInstanceID, out cacheRDGameObj);
             if (cacheRDGameObj != null) {
                 cacheRDGameObj.bStatic = rdGameObj.bStatic;
             }
@@ -131,11 +131,11 @@ public class S2CHandlers {
     public bool S2C_SetObjTag(NetCmd cmd, Cmd c) {
         string szRecv = c.ReadString();
 
-        List<RDGameObject> rdGameObjs = RDDataBase.Deserializer<List<RDGameObject>>(szRecv);
-        RDGameObject cacheRDGameObj = null;
+        List<GameObj> rdGameObjs = RDDataBase.Deserializer<List<GameObj>>(szRecv);
+        GameObj cacheRDGameObj = null;
 
-        foreach (RDGameObject rdGameObj in rdGameObjs) {
-            ShowPanelDataSet.ms_rdgameobjectDict.TryGetValue(rdGameObj.nInstanceID, out cacheRDGameObj);
+        foreach (GameObj rdGameObj in rdGameObjs) {
+            ShowPanelDataSet.ms_GameObjDict.TryGetValue(rdGameObj.nInstanceID, out cacheRDGameObj);
             if (cacheRDGameObj != null) {
                 cacheRDGameObj.szTag = rdGameObj.szTag;
             }
@@ -151,13 +151,13 @@ public class S2CHandlers {
     public bool S2C_SetObjLayer(NetCmd cmd, Cmd c) {
         string szRecv = c.ReadString();
 
-        RDGameObject[] rdGameObjs = RDDataBase.DeserializerArray<RDGameObject>(szRecv);
-        RDGameObject cacheRDGameObj = null;
+        GameObj[] rdGameObjs = IObject.DeSerializerArray<GameObj>(szRecv);
+        GameObj cacheRDGameObj = null;
 
-        foreach (RDGameObject rdGameObj in rdGameObjs) {
-            ShowPanelDataSet.ms_rdgameobjectDict.TryGetValue(rdGameObj.nInstanceID, out cacheRDGameObj);
+        foreach (GameObj rdGameObj in rdGameObjs) {
+            ShowPanelDataSet.ms_GameObjDict.TryGetValue(rdGameObj.m_nInstanceID, out cacheRDGameObj);
             if (cacheRDGameObj != null) {
-                cacheRDGameObj.nLayer = rdGameObj.nLayer;
+                cacheRDGameObj.m_nLayer = rdGameObj.m_nLayer;
             }
         }
         if (OnUpdateData != null) {
@@ -169,7 +169,7 @@ public class S2CHandlers {
     public bool S2C_QueryComponent(NetCmd cmd, Cmd c) {
         string data = c.ReadString();
         try {
-            RDComponent[] rdComps = RDDataBase.DeserializerArray<RDComponent>(data);
+            CompObj[] rdComps = IObject.DeSerializerArray<CompObj>(data);
 
             if (ShowPanelDataSet.ms_remoteGameObject != null) {
                 UnityEngine.Object.DestroyImmediate(ShowPanelDataSet.ms_remoteGameObject);
@@ -179,8 +179,8 @@ public class S2CHandlers {
             ShowPanelDataSet.ms_remoteGameObject.SetActive(false);
 
             for (int i = 0; i < rdComps.Length; ++i) {
-                if (ShowPanelDataSet.AddRemoteComponent(rdComps[i].szName)) {
-                    ShowPanelDataSet.AddRdComponent(rdComps[i]);
+                if (ShowPanelDataSet.AddRemoteComponent(rdComps[i].m_szName)) {
+                    ShowPanelDataSet.AddCompObj(rdComps[i]);
                 }
             }
 
@@ -202,9 +202,9 @@ public class S2CHandlers {
         try {
             string szRecv = c.ReadString();
 
-            RDProperty[] rdPropertys = RDDataBase.DeserializerArray<RDProperty>(szRecv);
+            PropertyObj[] PropertyObjs = IObject.DeSerializerArray<PropertyObj>(szRecv);
 
-            ShowPanelDataSet.ms_remoteComponent.SetPropertys(rdPropertys);
+            ShowPanelDataSet.ms_remoteComponent.SetPropertys(PropertyObjs);
 
             if (OnUpdateData != null) {
                 OnUpdateData();

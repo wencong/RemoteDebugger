@@ -160,13 +160,13 @@ public class CustomCmd {
         Renderer[] rs = UnityEngine.GameObject.FindObjectsOfType<Renderer>();
 
         HashSet<int> setObjIds = new HashSet<int>();
-        List<RDGameObject> rdGameObjects = new List<RDGameObject>();
+        List<GameObj> GameObjs = new List<GameObj>();
 
         for (int i = 0; i < rs.Length; ++i) {
             Renderer r = rs[i];
             if (GeometryUtility.TestPlanesAABB(planes, r.bounds)) {
                 try {
-                    AddRdGameObjs(ref setObjIds, ref rdGameObjects, r.transform);               
+                    AddRdGameObjs(ref setObjIds, ref GameObjs, r.transform);               
                     }
                 catch (Exception ex) {
                     CustomCmdExecutor.Instance.net_conn.LogMsgToClient(ex.ToString());
@@ -175,7 +175,7 @@ public class CustomCmd {
         }
 
         try {
-            string rdGameObjList = RDDataBase.SerializerArray<RDGameObject>(rdGameObjects.ToArray());
+            string rdGameObjList = IObject.SerializerArray(GameObjs.ToArray());
             Cmd usCmd = new Cmd(rdGameObjList.Length);
 
             usCmd.WriteNetCmd(NetCmd.S2C_QueryFrustumObjs);
@@ -188,7 +188,7 @@ public class CustomCmd {
         return true;
     }
 
-    void AddRdGameObjs(ref HashSet<int> setObjIds, ref List<RDGameObject> rdObjs, Transform ts) {
+    void AddRdGameObjs(ref HashSet<int> setObjIds, ref List<GameObj> rdObjs, Transform ts) {
         int objId = 0;
         GameObject curObj = ts.gameObject;
         
@@ -196,7 +196,7 @@ public class CustomCmd {
             objId = ts.parent.gameObject.GetInstanceID();
             if (!setObjIds.Contains(objId)) {
                 setObjIds.Add(objId);
-                rdObjs.Add(new RDGameObject(ts.parent.gameObject));
+                rdObjs.Add(new GameObj(ts.parent.gameObject));
             }
 
             ts = ts.parent;
@@ -205,7 +205,7 @@ public class CustomCmd {
         objId = curObj.GetInstanceID();
         if (!setObjIds.Contains(objId)) {
             setObjIds.Add(objId);
-            rdObjs.Add(new RDGameObject(curObj));
+            rdObjs.Add(new GameObj(curObj));
         }
     }
 

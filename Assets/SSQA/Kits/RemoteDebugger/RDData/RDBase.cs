@@ -10,7 +10,9 @@ using LitJsonEx;
 using UnityEditor;
 #endif
 
+
 public class RDDataBase {
+    /*
     public static string Serializer<T>(T obj) where T : IMetaObj {
         try {
             Type valueType = obj.GetValueType();
@@ -133,7 +135,7 @@ public class RDDataBase {
             throw (ex);
         }
     }
-
+    */
     public static string GetAssetPathOrName(UnityEngine.Object asset) {
         string szRet = string.Empty;
 

@@ -6,35 +6,136 @@ using System.Reflection;
 using LitJsonEx;
 
 public abstract class IObject {
-    //public bool m_bSelect = false;
-    public abstract bool CanSerializer();
+    protected abstract bool SupportSerializer();
 
-	public abstract string Serializer();
-    public abstract IObject DeSerializer(string szMsg);
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    protected abstract bool Serializer();
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    protected abstract bool DeSerializer();
 
-	public static string SerialierArray(IObject[] objs) {
-		string[] arrayObjs = new string[objs.Length];
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public abstract string GetTypeName();
 
-		for (int i = 0; i < objs.Length; ++i) {
-			arrayObjs[i] = objs[i].Serializer();
-		}
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public abstract string GetValueName();
 
-		return JsonMapper.ToJson(arrayObjs);
-	}
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="obj"></param>
+    /// <returns></returns>
+    public static string Serializer<T>(T obj) where T : IObject {
+        string szRet = null;
 
-	public static T[] DeserializerArray<T>(string szMsg) where T : IObject {
-		string arrayObjs = JsonMapper.ToObject<string[]>(szMsg);
+        if (!obj.SupportSerializer()) {
+            Debug.LogWarningFormat("{0}:{1} not support serializer", obj.GetTypeName(), obj.GetValueName());
+            goto Exit0;
+        }
 
-		T[] ret = new T[arrayObjs.Length];
-		for (int i = 0; i < arrayObjs.Length; ++i) {
-			T obj = new T();
-			obj = obj.DeSerializer(arrayObjs[i]);
-			ret[i] = obj;
-		}
+        if (!obj.Serializer()) {
+            Debug.LogErrorFormat("{0}:{1} Serializer Failed", obj.GetTypeName(), obj.GetValueName());
+            goto Exit0;
+        }
 
-		return ret;
-	}
+        try {
+            szRet = JsonMapper.ToJson(obj);
+        }
+        catch (Exception ex) {
+            Debug.LogException(ex);
+            szRet = null;
+        }
+
+    Exit0:
+        return szRet;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="jsonData"></param>
+    /// <returns></returns>
+    public static T DeSerializer<T>(string jsonData) where T : IObject {
+        T ret = null;
+        
+        try {
+            ret = JsonMapper.ToObject<T>(jsonData);
+        }
+        catch (Exception ex) {
+            Debug.LogException(ex);
+            goto Exit0;
+        }
+
+        if (ret == null) {
+            goto Exit0;
+        }
+
+        if (!ret.DeSerializer()) {
+            Debug.LogErrorFormat("{0}:{1} DeSerializer Failed", ret.GetTypeName(), ret.GetValueName());
+            ret = null;
+        }
+
+    Exit0:
+        return ret;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="objs"></param>
+    /// <returns></returns>
+    public static string SerializerArray<T>(T[] objs) where T : IObject {
+        List<string> lstJson =  new List<string>();
+
+        for (int i = 0; i < objs.Length; ++i) {
+            T obj = objs[i];
+
+            string szJson = Serializer<T>(obj);
+            if (szJson == null) {
+                continue;
+            }
+
+            lstJson.Add(szJson);
+        }
+        return JsonMapper.ToJson(lstJson);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="szJsonData"></param>
+    /// <returns></returns>
+    public static T[] DeSerializerArray<T>(string szJsonData) where T : IObject , new() {
+        List<string> lstJson = JsonMapper.ToObject<List<string>>(szJsonData);
+        List<T> lstObj = new List<T>();
+
+        for (int i = 0; i < lstJson.Count; ++i) {
+            string szJson = lstJson[i];
+
+            T obj = DeSerializer<T>(szJson);
+            if (obj == null) {
+                continue;
+            }
+
+            lstObj.Add(obj);
+        }
+        return lstObj.ToArray();
+    }
 }
 
 /// <summary>
@@ -51,6 +152,7 @@ public class GameObj : IObject {
     public bool m_bActive;
     public bool m_bStatic;
 
+    public bool m_bExpand;
     public GameObj(GameObject gameObject) {
         Transform trans = gameObject.transform;
 
@@ -79,16 +181,24 @@ public class GameObj : IObject {
 		
     }
 
-    public override bool CanSerializer() {
+    public override string GetTypeName() {
+        return "GameObject";
+    }
+
+    public override string GetValueName() {
+        return m_szName;
+    }
+
+    protected override bool SupportSerializer() {
         return true;
     }
 
-    public override string Serializer() {
-        return LitJsonEx.JsonMapper.ToJson(this);
+    protected override bool Serializer() {
+        return true;
     }
 
-    public override IObject DeSerializer(string szMsg) {
-        return LitJsonEx.JsonMapper.ToObject<GameObj>(szMsg);
+    protected override bool DeSerializer() {
+        return true;
     }
 }
 
@@ -102,6 +212,7 @@ public class CompObj : IObject {
 	public bool m_bEnable;
 	public bool m_bContainEnable;
 
+    public bool m_bExpand;
 	public CompObj() {
 		
 	}
@@ -119,34 +230,135 @@ public class CompObj : IObject {
 		}
 	}
 
-	public override bool CanSerializer () {
+    public override string GetTypeName() {
+        return "Component";
+    }
+
+    public override string GetValueName() {
+        return m_szName;
+    } 
+
+    protected override bool SupportSerializer() {
 		return true;
 	}
 
-	public override string Serializer () {
-		return LitJsonEx.JsonMapper.ToJson(this);
-	}
+    protected override bool Serializer() {
+        return true;
+    }
 
-	public override IObject DeSerializer (string szMsg) {
-		return LitJsonEx.JsonMapper.ToObject<CompObj>(szMsg);
-	}
+    protected override bool DeSerializer() {
+        return true;
+    }
 }
 
 /// <summary>
 /// Property object.
 /// </summary>
 public class PropertyObj : IObject {
-	public override bool CanSerializer () {
+    public string m_szTypeName;
+    public string m_szValueName;
+    public System.Object m_value;
+
+    public int m_nComponentID;
+
+    public PropertyObj(Component comp, MemberInfo memInfo) {
+        Type type = null;
+        if (memInfo.MemberType.Equals(MemberTypes.Property)) {
+            type = ((PropertyInfo)memInfo).PropertyType;
+            this.m_value = ((PropertyInfo)memInfo).GetValue(comp, null);
+        }
+        else if (memInfo.MemberType.Equals(MemberTypes.Field)) {
+            type = ((FieldInfo)memInfo).FieldType;
+            this.m_value = ((FieldInfo)memInfo).GetValue(comp);
+        }
+
+        this.m_szTypeName = type.ToString();
+        this.m_szValueName = memInfo.Name;
+        this.m_nComponentID = comp.GetInstanceID();
+    }
+
+    public PropertyObj() {
+
+    }
+
+    public override string GetTypeName() {
+        return m_szTypeName;
+    }
+
+    public override string GetValueName() {
+        return m_szValueName;
+    }
+
+    protected override bool SupportSerializer() {
+        if (IsAsset()) {
+            return false;
+        }
+
+        if (IsCollectionType()) {
+            return false;
+        }
+
 		return true;
 	}
 
-	public override string Serializer () {
-		return LitJsonEx.JsonMapper.ToJson(this);
+    protected override bool Serializer() {
+        bool bRet = false;
+        Type type = Util.GetTypeByName(m_szTypeName);
+
+        try {
+            if (type.IsEnum) {
+                this.m_value = this.m_value.ToString();
+            }
+            else if (!type.IsPrimitive && !type.Equals(typeof(string))) {
+                this.m_value = JsonMapper.ToJson(this.m_value);
+            }
+        }
+        catch {
+            goto Exit0;
+        }
+
+        bRet = true;
+    Exit0:
+        return bRet;
 	}
 
-	public override IObject DeSerializer (string szMsg) {
-		PropertyObj obj;
-		obj.MemberwiseClone();
-		return LitJsonEx.JsonMapper.ToObject<CompObj>(szMsg);
+    protected override bool DeSerializer() {
+        bool bRet = false;
+        Type type = Util.GetTypeByName(m_szTypeName);
+
+        try {
+            if (type.IsEnum) {
+                this.m_value = (Enum)Enum.Parse(type, m_value.ToString());
+            }
+            else if (!type.IsPrimitive && !type.Equals(typeof(string))) {
+                MethodInfo[] mis = typeof(JsonMapper).GetMethods();
+                for (int i = 0; i < mis.Length; ++i) {
+                    MethodInfo mi = mis[i];
+                    if(mi.Name == "ToObject" &&
+                       mi.IsGenericMethod &&
+                       mi.GetParameters().Length == 1 &&
+                       mi.GetParameters()[0].ParameterType.Equals(typeof(string))) {
+                           mi = mi.MakeGenericMethod(type);
+                           this.m_value = mi.Invoke(null, new System.Object[] { m_value });
+                           break;
+                    }
+                }
+            }
+        }
+        catch {
+            goto Exit0;
+        }
+
+        bRet = true;
+    Exit0:
+        return bRet;
 	}
+
+    public bool IsAsset() {
+        return Util.IsAsset(m_szTypeName);
+    }
+
+    public bool IsCollectionType() {
+        return m_value is System.Collections.ICollection;
+    }
 }

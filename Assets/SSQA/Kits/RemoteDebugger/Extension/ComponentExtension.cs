@@ -38,97 +38,47 @@ public static class ComponentExtension {
 		}
 	}
 
-    public static void SetPropertys(this Component component, RDProperty[] propertys) {
+    public static void SetPropertys(this Component component, PropertyObj[] propertys) {
         if (component != null && propertys.Length != 0) {
             for (int i = 0; i < propertys.Length;++i) {
-                RDProperty property = propertys[i];
+                PropertyObj property = propertys[i];
                 
                 // do not modify compnent's name
-                if (property.szName == "name") {
+                if (property.m_szValueName == "name") {
                     continue;
                 }
 
-                Type t = Util.GetTypeByName(property.szValueTypeName);
+                Type t = Util.GetTypeByName(property.m_szTypeName);
                 if (t == null) {
-                    Debug.LogWarningFormat("GetTypeByName({0}) is null", property.szValueTypeName);
+                    Debug.LogWarningFormat("GetTypeByName({0}) is null", property.m_szTypeName);
                     continue;
                 }
 
                 try {
-                    if (property.IsEnum()) {
-                        Enum eValue = (Enum)Enum.Parse(t, property.value.ToString());
-                        SetValue(component, property.szName, eValue);
+                    MethodInfo mi = typeof(ComponentExtension).GetMethod("SetValue").MakeGenericMethod(t);
+                    System.Object[] parmas = null;
+
+                    if (t.Equals(typeof(System.Single))) {
+                        parmas = new System.Object[] { component, property.m_szValueName, Single.Parse(property.m_value.ToString()) };
                     }
-
-                    else if (property.IsAsset()) {
-                        if (t.IsArray) {
-                            Debug.LogFormat("Todo: Set Asset value: {0} {1}", property.szValueTypeName, property.value.ToString());
-                        }
-                        else {
-                            //Debug.LogFormat("Todo: Set Asset value: {0} {1}", property.szValueTypeName, (string)property.value);
-                            //MethodInfo mi = typeof(RD).GetMethod("Load").MakeGenericMethod(t);
-
-                            //System.Object o = mi.Invoke(RD.Instance, new System.Object[] { property.value });
-
-                            if (t == typeof(Material)) {
-                                Material mat = Resources.Load<Material>((string)property.value);
-                                if (mat != null) {
-                                    SetValue<Material>(component, property.szName, mat);
-                                }
-                                else {
-                                    Debug.LogErrorFormat("Load {0} Failed! Start search Resources", property.value);
-
-                                    Material[] mats = Resources.FindObjectsOfTypeAll<Material>();
-                                    for (int j = 0; j < mats.Length; ++j) {
-                                        if (mats[j].name == (string)property.value) {
-                                            SetValue<Material>(component, property.szName, mats[j]);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            else if (t == typeof(Mesh)) {
-                                // todo
-                            }
-                        }
+                    else if (t.Equals(typeof(System.UInt32))) {
+                        parmas = new System.Object[] { component, property.m_szValueName, UInt32.Parse(property.m_value.ToString()) };
                     }
-
+                    else if (t.Equals(typeof(System.UInt64))) {
+                        parmas = new System.Object[] { component, property.m_szValueName, UInt64.Parse(property.m_value.ToString()) };
+                    }
+                    else if (t.Equals(typeof(System.UInt16))) {
+                        parmas = new System.Object[] { component, property.m_szValueName, UInt16.Parse(property.m_value.ToString()) };
+                    }
                     else {
-                        MethodInfo mi = typeof(ComponentExtension).GetMethod("SetValue").MakeGenericMethod(t);
-                        System.Object[] parmas = null;
-
-                        /*
-                        if (t.Equals(typeof(string))) {
-                            parmas = new System.Object[] { component, property.szName, property.value };
-                        }
-                        else {
-                            MethodInfo par = t.GetMethod("Parse");
-                            System.Object o = par.Invoke(null, new System.Object[] { property.value.ToString() });
-                            parmas = new System.Object[] { component, property.szName, o };
-                        }
-                        */
-                        
-                        if (t.Equals(typeof(System.Single))) {
-                            parmas = new System.Object[] { component, property.szName, Single.Parse(property.value.ToString()) };
-                        }
-                        else if (t.Equals(typeof(System.UInt32))) {
-                            parmas = new System.Object[] { component, property.szName, UInt32.Parse(property.value.ToString()) };
-                        }
-                        else if (t.Equals(typeof(System.UInt64))) {
-                            parmas = new System.Object[] { component, property.szName, UInt64.Parse(property.value.ToString()) };
-                        }
-                        else if (t.Equals(typeof(System.UInt16))) {
-                            parmas = new System.Object[] { component, property.szName, UInt16.Parse(property.value.ToString()) };
-                        }
-                        else {
-                            parmas = new System.Object[] { component, property.szName, property.value };
-                        }
-                        mi.Invoke(null, parmas);
+                        parmas = new System.Object[] { component, property.m_szValueName, property.m_value };
                     }
+                    mi.Invoke(null, parmas);
                 }
-                catch {
-                    Debug.LogErrorFormat("Set Component:{0} property:{1} Failed, Type:{2}", component.name, property.szName, t.ToString());
+
+                catch (Exception ex){
+                    Debug.LogException(ex);
+                    Debug.LogErrorFormat("Set Component:{0} property:{1} Failed, Type:{2}", component.name, property.m_szValueName, t.ToString());
                     //throw (new Exception(string.Format("Set Component:{0} property:{1} Failed, Type:{2}", component.name, property.szName, t.ToString())));
                 }
             }
@@ -136,8 +86,8 @@ public static class ComponentExtension {
     }
 
 
-    public static RDProperty[] GetPropertys(this Component component) {
-        List<RDProperty> lstPropertys = new List<RDProperty>();
+    public static PropertyObj[] GetPropertys(this Component component) {
+        List<PropertyObj> lstPropertys = new List<PropertyObj>();
 
         try {
             PropertyInfo[] propertyInfos = component.GetType().GetProperties(BindingFlags.Public | 
@@ -149,17 +99,15 @@ public static class ComponentExtension {
                                                                    BindingFlags.Instance | 
                                                                    BindingFlags.SetField | 
                                                                    BindingFlags.GetField);
-
+            
             for (int i = 0; i < propertyInfos.Length; ++i) {
                 PropertyInfo pi = propertyInfos[i];
-                if (pi.CanWrite && pi.CanRead) {
-                    bool bRet = pi.PropertyType.IsSubclassOf(typeof(UnityEngine.Component));
-                    if (bRet) {
-                        continue;
-                    }
 
-                    // call getter with these names will instantiate new object;
-                    if (Util.IsAsset(pi.PropertyType) && ( pi.Name == "mesh" || pi.Name == "material" || pi.Name == "materials")) {
+                //Debug.LogError("Property:" + pi.Name);
+
+                if (pi.CanWrite && pi.CanRead) {
+                    // call getter with these Property name will create new object;
+                    if (pi.Name == "mesh" || pi.Name == "material" || pi.Name == "materials") {
                         continue;
                     }
 
@@ -168,28 +116,20 @@ public static class ComponentExtension {
                         continue;
                     }
 
-                    lstPropertys.Add(new RDProperty(component, pi));
+                    lstPropertys.Add(new PropertyObj(component, pi));
+                }
+                else {
+                    
                 }
             }
 
             for (int i = 0; i < fieldInfos.Length; ++i) {
                 FieldInfo fi = fieldInfos[i];
-
-                if (fi.IsPublic && !fi.IsLiteral) {
-                    bool bRet = fi.FieldType.IsSubclassOf(typeof(UnityEngine.Component));
-                    if (bRet) {
-                        continue;
-                    }
-
-                    System.Object obj = fi.GetValue(component);
-                    if (obj is System.Collections.ICollection) {
-                        continue;
-                    }
-
-                    lstPropertys.Add(new RDProperty(component, fi));
-                }
+                Debug.LogError("Field:" + fi.Name);
+                lstPropertys.Add(new PropertyObj(component, fi));
             }
         }
+
         catch (Exception ex) {
             Debug.Log(ex);
         }

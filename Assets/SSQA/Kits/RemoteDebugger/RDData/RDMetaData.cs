@@ -45,7 +45,7 @@ public abstract class IMetaObj {
     }
 }
 
-public class RDGameObject : IMetaObj {
+public class GameObj : IMetaObj {
     public string szName;
     public int nInstanceID;
 
@@ -60,13 +60,13 @@ public class RDGameObject : IMetaObj {
 
     public bool bExpand;
 
-    public RDGameObject()
+    public GameObj()
         : base("", "", "") {
 
     }
 
-    public RDGameObject(GameObject gameobject)
-        : base("RDGameObject", "System.String", "") {
+    public GameObj(GameObject gameobject)
+        : base("GameObj", "System.String", "") {
         this.szName = gameobject.name;
         this.nInstanceID = gameobject.GetInstanceID();
         this.bActive = gameobject.activeSelf;
@@ -89,7 +89,7 @@ public class RDGameObject : IMetaObj {
     }
 }
 
-public class RDComponent : IMetaObj {
+public class CompObj : IMetaObj {
     public int nInstanceID;
     public string szName;
     public bool bExpand;
@@ -97,13 +97,13 @@ public class RDComponent : IMetaObj {
     public bool bContainEnable;
     public bool bEnable;
 
-    public RDComponent()
-        : base("RDComponent", typeof(string).ToString(), "") {
+    public CompObj()
+        : base("CompObj", typeof(string).ToString(), "") {
 
     }
 
-    public RDComponent(Component comp)
-        : base("RDComponent", typeof(string).ToString(), "") {
+    public CompObj(Component comp)
+        : base("CompObj", typeof(string).ToString(), "") {
         this.nInstanceID = comp.GetInstanceID();
         this.szName = comp.GetType().ToString();
 
@@ -117,19 +117,19 @@ public class RDComponent : IMetaObj {
     }
 }
 
-public class RDProperty : IMetaObj {
+public class PropertyObj : IMetaObj {
     public int nComponentID = 0;
 
     public int nMemType;
 
     public string szName;
 
-    public RDProperty()
-        : base("RDProperty", "", "") {
+    public PropertyObj()
+        : base("PropertyObj", "", "") {
     }
 
-    public RDProperty(Component comp, MemberInfo mi)
-        : base("RDProperty", "", "") {
+    public PropertyObj(Component comp, MemberInfo mi)
+        : base("PropertyObj", "", "") {
 
         this.nComponentID = comp.GetInstanceID();
         this.nMemType = (int)mi.MemberType;
