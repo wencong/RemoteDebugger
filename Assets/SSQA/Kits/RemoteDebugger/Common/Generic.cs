@@ -24,73 +24,76 @@ SOFTWARE.
 
 */
 
- ﻿using System.Collections;
-using System.Collections.Generic;
-using System;
-using System.Text;
+namespace RemoteDebugger {
 
-public interface IBytesConverter<T> {
-    byte[] GetBytes(T value);
-}
+    ﻿using System.Collections;
+    using System.Collections.Generic;
+    using System;
+    using System.Text;
 
-public class BytesConverter<T> : IBytesConverter<T> {
-    public static BytesConverter<T> Default {
-        get { return DefaultBytesProviders.GetDefaultProvider<T>(); }
+    public interface IBytesConverter<T> {
+        byte[] GetBytes(T value);
     }
 
-    Func<T, byte[]> _conversion;
+    public class BytesConverter<T> : IBytesConverter<T> {
+        public static BytesConverter<T> Default {
+            get { return DefaultBytesProviders.GetDefaultProvider<T>(); }
+        }
 
-    internal BytesConverter(Func<T, byte[]> conversion) {
-        _conversion = conversion;
-    }
+        Func<T, byte[]> _conversion;
 
-    public byte[] GetBytes(T value) {
-        return _conversion(value);
-    }
-}
+        internal BytesConverter(Func<T, byte[]> conversion) {
+            _conversion = conversion;
+        }
 
-static class DefaultBytesProviders {
-    static Dictionary<Type, object> _providers;
-
-    static DefaultBytesProviders() {
-        // Here are a couple for illustration. Yes, I am suggesting that
-        // in reality you would add a BytesProvider<T> for each T
-        // supported by the BitConverter class.
-        _providers = new Dictionary<Type, object>
- 		{
- 			{ typeof(int), new BytesConverter<int>(BitConverter.GetBytes) },
- 			{ typeof(long), new BytesConverter<long>(BitConverter.GetBytes) },
- 			{ typeof(short), new BytesConverter<short>(BitConverter.GetBytes) },
- 			{ typeof(float), new BytesConverter<float>(BitConverter.GetBytes) },
- 		};
-    }
-
-    public static BytesConverter<T> GetDefaultProvider<T>() {
-        return (BytesConverter<T>)_providers[typeof(T)];
-    }
-}
-
-public class Generic {
-    public static IEnumerable<List<T>> Slice<T>(List<T> objList, int slice) {
-        for (int i = 0; i < objList.Count; i += slice) {
-            yield return objList.GetRange(i, Math.Min(objList.Count - i, slice));
+        public byte[] GetBytes(T value) {
+            return _conversion(value);
         }
     }
 
-    public static byte[] Convert<T>(T value) {
-        return BytesConverter<T>.Default.GetBytes(value);
+    static class DefaultBytesProviders {
+        static Dictionary<Type, object> _providers;
+
+        static DefaultBytesProviders() {
+            // Here are a couple for illustration. Yes, I am suggesting that
+            // in reality you would add a BytesProvider<T> for each T
+            // supported by the BitConverter class.
+            _providers = new Dictionary<Type, object>
+ 		    {
+ 			    { typeof(int), new BytesConverter<int>(BitConverter.GetBytes) },
+ 			    { typeof(long), new BytesConverter<long>(BitConverter.GetBytes) },
+ 			    { typeof(short), new BytesConverter<short>(BitConverter.GetBytes) },
+ 			    { typeof(float), new BytesConverter<float>(BitConverter.GetBytes) },
+ 		    };
+        }
+
+        public static BytesConverter<T> GetDefaultProvider<T>() {
+            return (BytesConverter<T>)_providers[typeof(T)];
+        }
     }
 
-    public static object Convert<T>(byte[] buffer, int startIndex) {
-        if (typeof(T) == typeof(int)) {
-            return BitConverter.ToInt32(buffer, startIndex);
+    public class Generic {
+        public static IEnumerable<List<T>> Slice<T>(List<T> objList, int slice) {
+            for (int i = 0; i < objList.Count; i += slice) {
+                yield return objList.GetRange(i, Math.Min(objList.Count - i, slice));
+            }
         }
-        else if (typeof(T) == typeof(short)) {
-            return BitConverter.ToInt16(buffer, startIndex);
+
+        public static byte[] Convert<T>(T value) {
+            return BytesConverter<T>.Default.GetBytes(value);
         }
-        else if (typeof(T) == typeof(float)) {
-            return BitConverter.ToSingle(buffer, startIndex);
+
+        public static object Convert<T>(byte[] buffer, int startIndex) {
+            if (typeof(T) == typeof(int)) {
+                return BitConverter.ToInt32(buffer, startIndex);
+            }
+            else if (typeof(T) == typeof(short)) {
+                return BitConverter.ToInt16(buffer, startIndex);
+            }
+            else if (typeof(T) == typeof(float)) {
+                return BitConverter.ToSingle(buffer, startIndex);
+            }
+            return null;
         }
-        return null;
     }
 }

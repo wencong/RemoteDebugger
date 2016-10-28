@@ -24,53 +24,44 @@ SOFTWARE.
 
 */
 
+namespace RemoteDebugger {
+    using System.Collections.Generic;
+    using System;
 
-using System.Collections.Generic;
-using System;
+    public delegate bool CmdHandler(NetCmd cmd, Cmd c);
 
-public delegate bool CmdHandler(NetCmd cmd, Cmd c);
+    public enum CmdExecResult {
+        Succ,
+        Failed,
+        HandlerNotFound,
+    }
 
-public enum CmdExecResult
-{
-	Succ,
-	Failed,
-	HandlerNotFound,
+    public class CmdParsing {
+        public void RegisterHandler(NetCmd cmd, CmdHandler handler) {
+            m_handlers[cmd] = handler;
+        }
+
+        public CmdExecResult Execute(Cmd c) {
+            try {
+                NetCmd cmd = c.ReadNetCmd();
+                CmdHandler handler;
+                if (!m_handlers.TryGetValue(cmd, out handler)) {
+                    return CmdExecResult.HandlerNotFound;
+                }
+
+                if (handler(cmd, c)) {
+                    return CmdExecResult.Succ;
+                }
+                else {
+                    return CmdExecResult.Failed;
+                }
+            }
+            catch (Exception ex) {
+                Console.WriteLine("[cmd] Execution failed. ({0})", ex.Message);
+                return CmdExecResult.Failed;
+            }
+        }
+
+        Dictionary<NetCmd, CmdHandler> m_handlers = new Dictionary<NetCmd, CmdHandler>();
+    }
 }
-
-public class CmdParsing
-{
-	public void RegisterHandler(NetCmd cmd, CmdHandler handler)
-	{
-		m_handlers[cmd] = handler;
-	}
-	
-	public CmdExecResult Execute(Cmd c)
-	{
-		try
-		{
-			NetCmd cmd = c.ReadNetCmd();
-			CmdHandler handler;
-			if (!m_handlers.TryGetValue(cmd, out handler))
-			{
-				return CmdExecResult.HandlerNotFound;
-			}
-			
-			if (handler(cmd, c))
-			{
-				return CmdExecResult.Succ;
-			}
-			else
-			{
-				return CmdExecResult.Failed;
-			}
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine("[cmd] Execution failed. ({0})", ex.Message);
-			return CmdExecResult.Failed;
-		}
-	}
-	
-	Dictionary<NetCmd, CmdHandler> m_handlers = new Dictionary<NetCmd, CmdHandler>();
-}
-

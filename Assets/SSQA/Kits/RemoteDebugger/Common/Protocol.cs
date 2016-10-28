@@ -30,41 +30,39 @@ using System.Linq;
 using System.Text;
 
 
-public enum NetCmd
-{
-    None,
+namespace RemoteDebugger {
+    public enum NetCmd {
+        None,
 
-    C2S_CmdBegin             = 1000,
-    C2S_CmdQueryAllObjs,
-    C2S_CmdSetObjActive,
-    C2S_CmdSetObjStatic,
-    C2S_CmdSetObjTag,
-    C2S_CmdSetObjLayer,
-    C2S_QueryComponent,
-    C2S_GetComponentProperty,
-    C2S_EnableComponent,
-    C2S_ModifyComponentProperty,
-    C2S_Log,
-    C2S_CustomCmd,
+        C2S_CmdBegin = 1000,
+        C2S_CmdQueryAllObjs,
+        C2S_CmdSetObjActive,
+        C2S_CmdSetObjStatic,
+        C2S_CmdSetObjTag,
+        C2S_CmdSetObjLayer,
+        C2S_QueryComponent,
+        C2S_GetComponentProperty,
+        C2S_EnableComponent,
+        C2S_ModifyComponentProperty,
+        C2S_Log,
+        C2S_CustomCmd,
 
-    S2C_CmdBegin             = 2000,
-    S2C_CmdQueryAllObjs,
-    S2C_CmdSetObjActive,
-    S2C_CmdSetObjStatic,
-    S2C_CmdSetObjTag,
-    S2C_CmdSetObjLayer,
-    S2C_QueryComponent,
-    S2C_GetComponentProperty,
-    S2C_EnableComponent,
-    S2C_ModifyComponentProperty,
-    S2C_Log,
-    S2C_CustomCmd,
-    S2C_QueryFrustumObjs,
+        S2C_CmdBegin = 2000,
+        S2C_CmdQueryAllObjs,
+        S2C_CmdSetObjActive,
+        S2C_CmdSetObjStatic,
+        S2C_CmdSetObjTag,
+        S2C_CmdSetObjLayer,
+        S2C_QueryComponent,
+        S2C_GetComponentProperty,
+        S2C_EnableComponent,
+        S2C_ModifyComponentProperty,
+        S2C_Log,
+        S2C_CustomCmd,
+        S2C_QueryFrustumObjs,
 
-    S2C_FinishWait,
-    SV_CmdEnd,
+        S2C_FinishWait,
+        SV_CmdEnd,
+    }
+
 }
-
-
-
-
