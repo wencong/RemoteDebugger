@@ -44,74 +44,14 @@ namespace RemoteDebugger {
         private ShowType m_eShowType = ShowType.enum_SceneObjs;
         public static List<GameObj> ms_lstResultObjs = new List<GameObj>();
         // Test RDDataBase
-        /*
-        public class Test : IMetaObj{
-            public Test(string s1, string s2, System.Object o)
-                : base(s1, s2, o) {
-            }
-
-            public Test()
-                : base("", "", null) {
-            }
-        }
-
-        public class Ac {
-            public System.UInt32 uInt;
-        }
-
-        [MenuItem("SSQA/UInt32ToJson")]
-        public static void OnFindAssetPath() {
-            UInt32 val = 4;
-            Test t = new Test("Test", "System.Int32", val);
-
-            string json = RDDataBase.Serializer<Test>(t);
-
-            Test tt = RDDataBase.Deserializer<Test>(json);
-
-            FieldInfo fi = typeof(Ac).GetField("uInt");
-            Ac ac = new Ac();
-            fi.SetValue(ac, tt.value);
-        }
-        */
-
-        /*
-        [MenuItem("SSQA/AnalyzeMaterial")]
-        public static void AnalyzeMaterial() {
-            GameObject selectObj = Selection.activeGameObject;
-            if (selectObj == null) {
-                return;
-            }
-
-            MeshFilter mf = selectObj.GetComponent<MeshFilter>();
-
-            int i = mf.sharedMesh.subMeshCount;
-            List<Vector2> uv = new List<Vector2>();
-
-            mf.sharedMesh.GetUVs(0, uv);
-            mf.sharedMesh.GetUVs(1, uv);
-        }
-        */
-
-        [MenuItem("SSQA/RemoteDebugger")]
-        public static void OnShowWindow() {
-            
-            Infoc.UploadPluginStartInfo("RemoteDebugger");
-
-            GetWindow<HierarchyPanel>().Show();
-        }
-
-        [MenuItem("SSQA/TypeTest")]
-        public static void TestType() {
-            List<int> m_list = new List<int>();
-
-            Debug.Log(m_list is IList);
-            Debug.Log(m_list.GetType());
-            Debug.Log(typeof(IList));
-            Debug.Log(m_list.GetType().IsSubclassOf(typeof(IList<int>)));
-        }
 
         public void OnUpdateUI() {
             Repaint();
+        }
+
+        [MenuItem("SSQA/RemoteDebugger")]
+        public static void OnShowWindow() {
+            GetWindow<HierarchyPanel>().Show();
         }
 
         public static BatchOption DisplayeBatchOptionDialog(string propertyName) {
@@ -130,7 +70,6 @@ namespace RemoteDebugger {
         }
 
         private int m_nCmdIndex = 0;
-    
         private void ShowSearchPanel() {
             if (!net_client.IsConnected) {
                 return;
@@ -485,7 +424,7 @@ namespace RemoteDebugger {
             bool bRet = property.NextVisible(true);
 
             while (bRet) {
-                EditorGUILayout.PropertyField(property, true);
+                EditorGUILayout.PropertyField(property, false);
 
                 if (obj.ApplyModifiedProperties()) {
                     ShowPanelDataSet.ms_remoteComponent = remoteComponent;

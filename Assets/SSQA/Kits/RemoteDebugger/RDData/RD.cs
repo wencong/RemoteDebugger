@@ -74,6 +74,8 @@ namespace RemoteDebugger {
     }
 
     public static class ShowPanelDataSet {
+
+
         public static void InitDataSet() {
             ms_GameObjDict.Clear();
             ms_lstRootRDObjs.Clear();
@@ -102,6 +104,7 @@ namespace RemoteDebugger {
             if (rd.m_nParentID == -1) {
                 ms_lstRootRDObjs.Add(rd);
             }
+
         }
 
         public static void AddFrustumRDObject(GameObj rd) {
@@ -232,10 +235,8 @@ namespace RemoteDebugger {
                     }
                 }
             }
-
             return ret;
         }
-
 
         public static Dictionary<int, GameObj> ms_GameObjDict = new Dictionary<int, GameObj>();
         public static List<GameObj> ms_lstRootRDObjs = new List<GameObj>();
@@ -248,6 +249,7 @@ namespace RemoteDebugger {
 
         public static GameObject ms_remoteGameObject = null;
         public static Component ms_remoteComponent = null;
+
 
         public static void ClearAllData() {
             if (ms_GameObjDict.Count > 0) {
